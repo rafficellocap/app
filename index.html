@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rafficello">
+<meta name="theme-color" content="#0a0a0f">
+<title>Rafficello Capital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --gold-dim: #7a6330;
+  --ink: #0a0a0f;
+  --ink-2: #13131c;
+  --ink-3: #1c1c28;
+  --ink-4: #252533;
+  --ink-5: #32324a;
+  --silver: #8a8aaa;
+  --silver-light: #b8b8d0;
+  --white: #f0efe8;
+  --white-dim: rgba(240,239,232,0.6);
+  --white-faint: rgba(240,239,232,0.12);
+  --up: #4CAF7C;
+  --down: #E05A4A;
+  --income: #C9A84C;
+  --safe: env(safe-area-inset-bottom, 20px);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; width: 100%;
+  background: var(--ink);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ── SCROLLABLE WRAPPER ── */
+#scroll-root {
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(90px + var(--safe));
+}
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.6s ease;
+}
+#splash.out { opacity: 0; pointer-events: none; }
+.splash-mark {
+  width: 72px; height: 72px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', serif; font-size: 36px; color: var(--ink);
+  font-weight: 600; letter-spacing: -1px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 40px rgba(201,168,76,0.3);
+  animation: breathe 2s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{box-shadow:0 0 40px rgba(201,168,76,0.3);} 50%{box-shadow:0 0 60px rgba(201,168,76,0.5);} }
+.splash-name { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; letter-spacing: 4px; color: var(--white); text-transform: uppercase; }
+.splash-sub { font-size: 11px; letter-spacing: 3px; color: var(--silver); text-transform: uppercase; margin-top: 6px; }
+
+/* ── HEADER ── */
+.header {
+  padding: env(safe-area-inset-top, 44px) 20px 0;
+  background: linear-gradient(180deg, var(--ink) 0%, transparent 100%);
+  position: sticky; top: 0; z-index: 50;
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0 10px;
+  border-bottom: 0.5px solid rgba(201,168,76,0.2);
+}
+.wordmark { display: flex; align-items: center; gap: 10px; }
+.wordmark-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--ink); font-weight: 600;
+}
+.wordmark-text { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase; color: var(--white); }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink-3); border: 0.5px solid var(--ink-5);
+  color: var(--silver-light); font-size: 14px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.icon-btn.refreshing { animation: spin 1s linear infinite; }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* ── PORTFOLIO SWITCHER ── */
+.ptf-scroll { overflow-x: auto; padding: 10px 20px 6px; display: flex; gap: 8px; }
+.ptf-scroll::-webkit-scrollbar { display: none; }
+.ptf-pill {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.3px;
+  border: 0.5px solid var(--ink-5); background: transparent;
+  color: var(--silver); cursor: pointer; white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.ptf-pill.active { background: var(--gold); color: var(--ink); border-color: var(--gold); font-weight: 500; }
+.ptf-pill.add-pill { border-style: dashed; border-color: var(--gold-dim); color: var(--gold-dim); }
+
+/* ── FX BAR ── */
+.fx-bar { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 8px; }
+.fx-bar::-webkit-scrollbar { display: none; }
+.fx-chip { flex-shrink: 0; background: var(--ink-3); border-radius: 6px; padding: 4px 10px; font-size: 11px; color: var(--silver); white-space: nowrap; }
+.fx-chip span { color: var(--gold-light); font-weight: 500; }
+
+/* ── MAIN CONTENT ── */
+.main { padding: 0 20px; }
+
+/* ── OVERVIEW (ALL) ── */
+.overview-hero {
+  background: var(--ink-2); border-radius: var(--radius);
+  border: 0.5px solid var(--ink-5);
+  padding: 20px; margin-bottom: 16px;
+  position: relative; overflow: hidden;
+}
+.overview-hero::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+}
+.ov-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); margin-bottom: 6px; }
+.ov-total { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--white); letter-spacing: -1px; line-height: 1; }
+.ov-total.up { color: var(--up); }
+.ov-total.dn { color: var(--down); }
+.ov-sub { font-size: 12px; color: var(--silver); margin-top: 6px; }
+
+.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.ov-stat { background: var(--ink-3); border-radius: var(--radius-sm); padding: 14px; border: 0.5px solid var(--ink-5); }
+.ov-stat .s-lbl { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--silver); margin-bottom: 6px; }
+.ov-stat .s-val { font-size: 20px; font-weight: 300; color: var(--white); font-family: 'Cormorant Garamond', serif; }
+.ov-stat .s-val.up{color:var(--up)} .ov-stat .s-val.dn{color:var(--down)} .ov-stat .s-val.gold{color:var(--gold)}
+.ov-stat .s-sub { font-size: 10px; color: var(--silver); margin-top: 3px; }
+
+/* ── PORTFOLIO CARDS (overview) ── */
+.ptf-card {
+  background: var(--ink-2); border: 0.5px solid var(--ink-5);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  transition: border-color 0.2s;
+  position: relative; overflow: hidden;
+}
+.ptf-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:2px 0 0 2px; }
+.ptf-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.ptf-card-info { flex:1; min-width:0; }
+.ptf-card-name { font-size: 15px; font-weight: 400; color: var(--white); }
+.ptf-card-sub { font-size: 11px; color: var(--silver); margin-top: 2px; }
+.ptf-card-right { text-align: right; }
+.ptf-card-pnl { font-size: 15px; font-weight: 500; }
+.ptf-card-pnl.up{color:var(--up)} .ptf-card-pnl.dn{color:var(--down)}
+.ptf-card-val { font-size: 11px; color: var(--silver); margin-top: 2px; }
+.ptf-card-inc { font-size: 11px; color: var(--gold); margin-top: 1px; }
+
+/* ── METRICS ROW ── */
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.metric-card { background: var(--ink-2); border-radius: var(--radius-sm); padding: 14px; border: 0.5px solid var(--ink-5); }
+.metric-card .m-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); margin-bottom: 5px; }
+.metric-card .m-val { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; color: var(--white); line-height: 1.1; }
+.metric-card .m-val.up{color:var(--up)} .metric-card .m-val.dn{color:var(--down)} .metric-card .m-val.gold{color:var(--gold)} .metric-card .m-val.sm{font-size:17px}
+.metric-card .m-sub { font-size: 10px; color: var(--silver); margin-top: 3px; }
+
+/* ── INCOME BANNER ── */
+.income-banner {
+  background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.05));
+  border: 0.5px solid rgba(201,168,76,0.3);
+  border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ib-left .ib-title { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 4px; }
+.ib-left .ib-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; color: var(--gold); }
+.ib-left .ib-sub { font-size: 10px; color: var(--gold-dim); margin-top: 2px; }
+.ib-yield { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--gold); }
+.ib-yield-lbl { font-size: 9px; letter-spacing: 1px; color: var(--gold-dim); text-align: right; }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--silver); margin: 18px 0 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::after { content:''; flex:1; height:0.5px; background: var(--ink-5); }
+
+/* ── PERIOD CHIPS ── */
+.period-scroll { overflow-x: auto; margin: 0 -20px; padding: 0 20px 8px; display: flex; gap: 6px; }
+.period-scroll::-webkit-scrollbar { display: none; }
+.period-chip {
+  flex-shrink: 0; padding: 5px 12px; border-radius: 16px; font-size: 11px; font-weight: 500;
+  border: 0.5px solid var(--ink-5); background: transparent; color: var(--silver); cursor: pointer;
+  transition: all 0.15s;
+}
+.period-chip.active { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+
+/* ── CHART ── */
+.chart-container { background: var(--ink-2); border-radius: var(--radius); border: 0.5px solid var(--ink-5); padding: 14px 14px 10px; margin-bottom: 6px; }
+.chart-wrap { position: relative; width: 100%; height: 170px; }
+.chart-meta { display: flex; gap: 16px; margin-top: 8px; }
+.chart-meta-item { font-size: 11px; color: var(--silver); }
+.chart-meta-item span { color: var(--white); font-weight: 500; }
+.chart-meta-item span.up{color:var(--up)} .chart-meta-item span.dn{color:var(--down)}
+
+/* ── MONTHLY GRID ── */
+.monthly-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 4px; }
+.month-tile { background: var(--ink-2); border-radius: var(--radius-sm); padding: 10px; cursor: pointer; border: 0.5px solid var(--ink-5); transition: border-color 0.15s; }
+.month-tile.active { border-color: var(--gold-dim); }
+.month-tile .mt-name { font-size: 10px; color: var(--silver); margin-bottom: 4px; letter-spacing: 0.5px; }
+.month-tile .mt-pnl { font-size: 13px; font-weight: 500; }
+.month-tile .mt-pnl.up{color:var(--up)} .month-tile .mt-pnl.dn{color:var(--down)} .month-tile .mt-pnl.neu{color:var(--silver)}
+.month-tile .mt-inc { font-size: 10px; color: var(--gold); margin-top: 2px; }
+
+/* ── ASSET TABS ── */
+.asset-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 0 -20px; padding: 0 20px 8px; }
+.asset-tabs::-webkit-scrollbar { display: none; }
+.asset-tab {
+  flex-shrink: 0; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 500;
+  border: 0.5px solid var(--ink-5); background: transparent; color: var(--silver); cursor: pointer;
+}
+.asset-tab.active { background: var(--ink-3); color: var(--white); border-color: var(--ink-4); }
+
+/* ── POSITION CARDS ── */
+.pos-card {
+  background: var(--ink-2); border: 0.5px solid var(--ink-5);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.pos-card:active { background: var(--ink-3); }
+.pos-badge {
+  width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.3px;
+}
+.pos-badge.EQ{background:rgba(55,138,221,0.2);color:#7AB8F5}
+.pos-badge.FI{background:rgba(29,158,117,0.2);color:#4CAF7C}
+.pos-badge.OPT{background:rgba(186,117,23,0.2);color:#E8A83A}
+.pos-badge.FX{background:rgba(127,119,221,0.2);color:#A89BEF}
+.pos-badge.CRY{background:rgba(216,90,48,0.2);color:#F07A5A}
+.pos-badge.ALT{background:rgba(212,83,126,0.2);color:#F08AB0}
+.pos-badge.SP{background:rgba(201,168,76,0.2);color:#E8C97A}
+.pos-info { flex:1; min-width:0; }
+.pos-name { font-size: 14px; font-weight: 400; color: var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pos-meta { font-size: 11px; color: var(--silver); margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--up); flex-shrink: 0; }
+.live-dot.stale { background: var(--ink-5); }
+.pos-right { text-align: right; flex-shrink: 0; }
+.pos-pnl { font-size: 14px; font-weight: 500; }
+.pos-pnl.up{color:var(--up)} .pos-pnl.dn{color:var(--down)}
+.pos-income { font-size: 11px; color: var(--gold); margin-top: 2px; }
+.pos-val { font-size: 11px; color: var(--silver); margin-top: 2px; }
+.dir-tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 500; }
+.dir-tag.LONG{background:rgba(76,175,124,0.15);color:var(--up)}
+.dir-tag.SHORT{background:rgba(224,90,74,0.15);color:var(--down)}
+.dir-tag.CALL{background:rgba(76,175,124,0.15);color:var(--up)}
+.dir-tag.PUT{background:rgba(224,90,74,0.15);color:var(--down)}
+.isin-chip { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: var(--ink-4); color: var(--silver); font-family: monospace; }
+
+.empty-state { text-align: center; padding: 40px 20px; color: var(--silver); }
+.empty-state .e-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state .e-text { font-size: 14px; }
+
+/* ── FAB ── */
+.fab-wrap {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 12px 20px calc(12px + var(--safe));
+  background: linear-gradient(0deg, var(--ink) 60%, transparent);
+  pointer-events: none;
+}
+.fab {
+  width: 100%; padding: 16px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: var(--ink); font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 500; letter-spacing: 0.5px;
+  border: none; cursor: pointer; pointer-events: all;
+  box-shadow: 0 4px 24px rgba(201,168,76,0.3);
+  display: none;
+}
+.fab:active { opacity: 0.85; transform: scale(0.99); }
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  background: var(--ink-2);
+  border-radius: 20px 20px 0 0;
+  border: 0.5px solid var(--ink-5);
+  width: 100%; max-width: 480px;
+  max-height: 92dvh; overflow-y: auto;
+  padding: 6px 20px calc(20px + var(--safe));
+  -webkit-overflow-scrolling: touch;
+}
+.modal-handle { width: 36px; height: 4px; background: var(--ink-5); border-radius: 2px; margin: 10px auto 16px; }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; color: var(--white); margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--silver); margin-bottom: 18px; }
+.modal-close { float: right; width: 28px; height: 28px; border-radius: 50%; background: var(--ink-4); border: none; color: var(--silver); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: -2px; }
+
+/* ── FORM ── */
+.f-group { margin-bottom: 14px; }
+.f-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--silver); margin-bottom: 6px; display: block; }
+.f-input, .f-select {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--ink-3); border: 0.5px solid var(--ink-5);
+  color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px;
+  -webkit-appearance: none; appearance: none;
+}
+.f-input:focus, .f-select:focus { outline: none; border-color: var(--gold-dim); }
+.f-input::placeholder { color: var(--ink-5); }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.f-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.f-hint { font-size: 11px; color: var(--silver); margin-top: 4px; line-height: 1.4; }
+.f-fetch-row { display: flex; gap: 8px; }
+.f-fetch-row .f-input { flex:1; min-width:0; }
+.f-btn-sm {
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--ink-4); border: 0.5px solid var(--ink-5);
+  color: var(--silver-light); font-size: 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.f-btn-sm:disabled { opacity: 0.4; }
+.f-status { font-size: 11px; margin-top: 4px; min-height: 14px; }
+.f-status.ok{color:var(--up)} .f-status.err{color:var(--down)} .f-status.info{color:var(--gold)}
+.f-divider { border: none; border-top: 0.5px solid var(--ink-4); margin: 16px 0; }
+.f-section { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-dim); margin: 14px 0 8px; }
+.search-results { border: 0.5px solid var(--ink-5); border-radius: var(--radius-sm); overflow: hidden; margin-top: 8px; }
+.sri { padding: 11px 14px; cursor: pointer; border-bottom: 0.5px solid var(--ink-4); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sri:last-child { border-bottom: none; }
+.sri:active { background: var(--ink-3); }
+.sri-l .sri-sym { font-size: 13px; font-weight: 500; color: var(--white); }
+.sri-l .sri-name { font-size: 11px; color: var(--silver); margin-top: 1px; }
+.sri-r { font-size: 12px; color: var(--silver); white-space: nowrap; }
+
+/* ── CALC BOX ── */
+.calc-box { background: rgba(201,168,76,0.08); border: 0.5px solid rgba(201,168,76,0.2); border-radius: var(--radius-sm); padding: 10px 12px; margin: 6px 0; font-size: 12px; color: var(--gold); line-height: 1.5; }
+.calc-box strong { font-weight: 500; }
+
+/* ── SP TYPE GRID ── */
+.sp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.sp-btn { padding: 10px 8px; border: 0.5px solid var(--ink-5); border-radius: var(--radius-sm); background: transparent; color: var(--silver); cursor: pointer; font-size: 12px; text-align: center; font-family: 'DM Sans', sans-serif; }
+.sp-btn.active { border-color: var(--gold-dim); background: rgba(201,168,76,0.1); color: var(--gold); font-weight: 500; }
+
+/* ── INCOME LOG ── */
+.inc-log-item { display: flex; align-items: center; gap: 8px; background: var(--ink-3); border-radius: var(--radius-sm); padding: 9px 12px; margin-bottom: 6px; }
+.ili-date { font-size: 11px; color: var(--silver); min-width: 72px; }
+.ili-type { font-size: 11px; font-weight: 500; color: var(--gold); min-width: 70px; }
+.ili-amt { flex:1; font-size: 13px; font-weight: 500; color: var(--gold); text-align: right; }
+.ili-del { background: none; border: none; color: var(--silver); cursor: pointer; font-size: 13px; padding: 0 2px; }
+.inc-add-row { display: grid; grid-template-columns: 100px 90px 1fr 64px auto; gap: 6px; align-items: center; margin-bottom: 8px; }
+.inc-add-row .f-input, .inc-add-row .f-select { padding: 9px 10px; font-size: 12px; }
+.inc-add-row .add-inc-btn { padding: 9px 12px; background: var(--gold-dim); color: var(--white); border: none; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; white-space: nowrap; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  width: 100%; padding: 15px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: var(--ink); font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 500; border: none; cursor: pointer; margin-top: 10px;
+}
+.btn-primary:active { opacity: 0.85; }
+.btn-danger { background: rgba(224,90,74,0.2); color: var(--down); border: 0.5px solid rgba(224,90,74,0.3); border-radius: var(--radius-sm); padding: 12px; width: 100%; font-size: 14px; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 8px; }
+
+/* ── DETAIL ROWS ── */
+.detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid var(--ink-4); font-size: 14px; gap: 12px; }
+.detail-row span:first-child { color: var(--silver); flex-shrink: 0; }
+.detail-row span:last-child { text-align: right; color: var(--white); word-break: break-all; }
+
+/* ── COLOR PICKER ── */
+.color-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s; }
+.color-swatch.selected { border-color: var(--white); transform: scale(1.15); }
+
+/* ── SOURCE BADGES ── */
+.sbadge { display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 3px; margin-left: 6px; font-weight: 500; }
+.sbadge.live{background:rgba(76,175,124,0.15);color:var(--up)}
+.sbadge.manual{background:var(--ink-4);color:var(--silver)}
+.sbadge.isin{background:rgba(201,168,76,0.15);color:var(--gold)}
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="splash-mark">R</div>
+  <div class="splash-name">Rafficello</div>
+  <div class="splash-sub">Capital</div>
+</div>
+
+<div id="scroll-root">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="wordmark">
+        <div class="wordmark-icon">R</div>
+        <div class="wordmark-text" id="app-title">Rafficello Capital</div>
+      </div>
+      <div class="header-actions">
+        <div class="icon-btn" id="refresh-btn" onclick="refreshAll()" title="Refresh">↻</div>
+        <div class="icon-btn" onclick="openPtfModal()" title="Settings">⊕</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolio switcher -->
+  <div class="ptf-scroll" id="ptf-row"></div>
+
+  <!-- FX bar -->
+  <div class="fx-bar" id="fx-bar"><div class="fx-chip">Loading FX…</div></div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- ALL portfolios overview -->
+    <div id="overview-section" style="display:none;">
+      <div class="overview-hero">
+        <div class="ov-label">Total portfolio value</div>
+        <div class="ov-total sm" id="ov-val">CHF —</div>
+        <div class="ov-sub" id="ov-date"></div>
+      </div>
+      <div class="ov-grid">
+        <div class="ov-stat"><div class="s-lbl">Total P&amp;L</div><div class="s-val" id="ov-pnl">—</div></div>
+        <div class="ov-stat"><div class="s-lbl">Total income</div><div class="s-val gold" id="ov-income">—</div></div>
+        <div class="ov-stat"><div class="s-lbl">Total return</div><div class="s-val" id="ov-return">—</div></div>
+        <div class="ov-stat"><div class="s-lbl">Positions</div><div class="s-val" id="ov-pos">—</div></div>
+      </div>
+      <div class="section-label">Portfolios</div>
+      <div id="ptf-overview-cards"></div>
+    </div>
+
+    <!-- Single portfolio view -->
+    <div id="portfolio-section" style="display:none;">
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="m-lbl">Value</div><div class="m-val sm" id="m-val">—</div></div>
+        <div class="metric-card"><div class="m-lbl" id="m-pnl-lbl">P&amp;L</div><div class="m-val" id="m-pnl">—</div><div class="m-sub" id="m-pnl-sub"></div></div>
+        <div class="metric-card"><div class="m-lbl">Day P&amp;L</div><div class="m-val" id="m-day">—</div></div>
+        <div class="metric-card"><div class="m-lbl">Total return</div><div class="m-val sm" id="m-return">—</div><div class="m-sub">P&amp;L + income</div></div>
+      </div>
+
+      <div id="income-banner-wrap"></div>
+
+      <div class="section-label">Performance</div>
+      <div class="period-scroll" id="period-row"></div>
+      <div class="chart-container">
+        <div class="chart-wrap"><canvas id="pnlChart" role="img" aria-label="Cumulative P&L chart in CHF">No data yet.</canvas></div>
+        <div class="chart-meta" id="chart-meta"></div>
+      </div>
+
+      <div class="section-label" style="margin-top:14px;">Monthly</div>
+      <div class="monthly-grid" id="monthly-grid"></div>
+
+      <div class="section-label" style="margin-top:16px;">Positions</div>
+      <div class="asset-tabs" id="asset-tabs">
+        <div class="asset-tab active" onclick="setTab('all')">All</div>
+        <div class="asset-tab" onclick="setTab('EQ')">Equity</div>
+        <div class="asset-tab" onclick="setTab('FI')">Bonds</div>
+        <div class="asset-tab" onclick="setTab('OPT')">Options</div>
+        <div class="asset-tab" onclick="setTab('SP')">SP</div>
+        <div class="asset-tab" onclick="setTab('FX')">FX</div>
+        <div class="asset-tab" onclick="setTab('CRY')">Crypto</div>
+        <div class="asset-tab" onclick="setTab('ALT')">Alts</div>
+      </div>
+      <div id="positions-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<div class="fab-wrap">
+  <button class="fab" id="main-fab" onclick="openAddModal()">+ Add Position</button>
+</div>
+
+<!-- ══ PORTFOLIO MODAL ══ -->
+<div class="modal-overlay" id="ptf-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal('ptf-modal')">✕</button>
+    <div class="modal-title" id="ptf-modal-title">New Portfolio</div>
+    <div class="modal-sub">Name it and choose a colour</div>
+    <div class="f-group"><label class="f-label">Portfolio name</label><input class="f-input" type="text" id="ptf-name" placeholder="e.g. Core, Satellite, Crypto…"></div>
+    <div class="f-group"><label class="f-label">Description</label><input class="f-input" type="text" id="ptf-desc" placeholder="Optional description"></div>
+    <div class="f-group"><label class="f-label">Colour</label><div class="color-row" id="color-row"></div></div>
+    <button class="btn-primary" onclick="savePortfolio()">Save Portfolio</button>
+    <button class="btn-danger" id="ptf-del-btn" style="display:none;" onclick="deletePortfolio()">Delete Portfolio</button>
+  </div>
+</div>
+
+<!-- ══ ADD/EDIT POSITION MODAL ══ -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal('add-modal')">✕</button>
+    <div class="modal-title" id="modal-title">Add Position</div>
+    <div class="modal-sub" id="modal-sub"></div>
+
+    <div class="f-group"><label class="f-label">Portfolio</label><select class="f-select" id="f-portfolio"></select></div>
+    <div class="f-group"><label class="f-label">Asset class</label>
+      <select class="f-select" id="f-type" onchange="updateFormFields()">
+        <option value="EQ">Equity — Stock / ETF</option>
+        <option value="FI">Fixed Income — Bond</option>
+        <option value="OPT">Option — EUREX / CBOE</option>
+        <option value="SP">Structured Product</option>
+        <option value="FX">FX Position</option>
+        <option value="CRY">Crypto</option>
+        <option value="ALT">Alternative</option>
+      </select>
+    </div>
+
+    <!-- Security search -->
+    <div id="sec-search-section">
+      <div class="f-section">Security lookup</div>
+      <div class="f-hint" style="margin-bottom:8px;">Ticker (NESN.SW), ISIN (CH0012221716), or name</div>
+      <div class="f-fetch-row">
+        <input class="f-input" type="text" id="f-search" placeholder="Search…" oninput="onSearchInput()">
+        <button class="f-btn-sm" onclick="runSecuritySearch()">Search</button>
+      </div>
+      <div class="f-status" id="search-status"></div>
+      <div id="search-results" style="display:none;" class="search-results"></div>
+    </div>
+
+    <!-- Crypto -->
+    <div id="cry-section" style="display:none;">
+      <div class="f-section">CoinGecko lookup</div>
+      <div class="f-fetch-row"><input class="f-input" type="text" id="f-coin" placeholder="bitcoin, ethereum, solana"><button class="f-btn-sm" onclick="fetchCryptoPrice()">Look up</button></div>
+      <div class="f-status" id="fetch-cry-status"></div>
+    </div>
+
+    <!-- Options -->
+    <div id="opt-section" style="display:none;">
+      <div class="f-section">EUREX / CBOE Underlying</div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Exchange</label><select class="f-select" id="f-exchange"><option value="eurex">EUREX</option><option value="cboe">CBOE</option><option value="other">Other</option></select></div>
+        <div class="f-group"><label class="f-label">Underlying</label><input class="f-input" type="text" id="f-opt-under" placeholder="DAX, SPX…"></div>
+      </div>
+      <div class="f-row3">
+        <div class="f-group"><label class="f-label">Type</label><select class="f-select" id="f-opt-type"><option value="CALL">Call</option><option value="PUT">Put</option></select></div>
+        <div class="f-group"><label class="f-label">Strike</label><input class="f-input" type="number" id="f-strike" placeholder="0" step="any"></div>
+        <div class="f-group"><label class="f-label">Expiry</label><input class="f-input" type="date" id="f-expiry"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Multiplier</label><input class="f-input" type="number" id="f-multiplier" value="100"></div>
+        <div class="f-group"><label class="f-label">Underlying px</label><input class="f-input" type="number" id="f-under-px" placeholder="auto" step="any" readonly style="opacity:0.5;"></div>
+      </div>
+      <button class="f-btn-sm" style="width:100%;margin-bottom:8px;" onclick="fetchUnderlyingPrice()">Fetch underlying price</button>
+      <div class="f-status" id="fetch-opt-status"></div>
+    </div>
+
+    <!-- FX -->
+    <div id="fx-section" style="display:none;">
+      <div class="f-section">Live FX Rate</div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Buy</label><input class="f-input" type="text" id="f-fx-buy" placeholder="EUR" maxlength="3" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="f-group"><label class="f-label">Sell</label><input class="f-input" type="text" id="f-fx-sell" placeholder="USD" maxlength="3" oninput="this.value=this.value.toUpperCase()"></div>
+      </div>
+      <button class="f-btn-sm" style="width:100%;margin-bottom:6px;" onclick="fetchFxPair()">Load live rate</button>
+      <div class="f-status" id="fetch-fx-status"></div>
+    </div>
+
+    <!-- Alt -->
+    <div id="alt-section" style="display:none;">
+      <div class="f-section">Alternative type</div>
+      <div class="f-group"><select class="f-select" id="f-alt-type"><option value="PE">Private Equity</option><option value="RE">Real Estate</option><option value="HF">Hedge Fund</option><option value="COMM">Commodity</option><option value="INF">Infrastructure</option><option value="ART">Art / Collectibles</option><option value="VC">Venture Capital</option><option value="OTHER">Other</option></select></div>
+    </div>
+
+    <!-- SP -->
+    <div id="sp-section" style="display:none;">
+      <div class="f-section">Product type</div>
+      <div class="sp-grid" id="sp-type-grid"></div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Barrier / Strike</label><input class="f-input" type="number" id="f-sp-barrier" placeholder="e.g. 80%" step="any"></div>
+        <div class="f-group"><label class="f-label">Expiry</label><input class="f-input" type="date" id="f-sp-expiry"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Issuer</label><input class="f-input" type="text" id="f-sp-issuer" placeholder="UBS, Vontobel…"></div>
+        <div class="f-group"><label class="f-label">Protection %</label><input class="f-input" type="number" id="f-sp-protection" placeholder="100" step="any"></div>
+      </div>
+    </div>
+
+    <div class="f-divider"></div>
+
+    <!-- ISIN -->
+    <div class="f-group">
+      <label class="f-label">ISIN <span style="color:var(--gold-dim);font-weight:300;text-transform:none;letter-spacing:0;">(optional — for bonds & SPs)</span></label>
+      <div class="f-fetch-row">
+        <input class="f-input" type="text" id="f-isin" placeholder="CH0012221716" style="font-family:monospace;font-size:13px;" oninput="this.value=this.value.toUpperCase()">
+        <button class="f-btn-sm" onclick="lookupByIsin()">Lookup</button>
+      </div>
+      <div class="f-status" id="isin-status"></div>
+    </div>
+
+    <div class="f-group"><label class="f-label" id="name-label">Name / Label</label><input class="f-input" type="text" id="f-name" placeholder="Display name"></div>
+    <div class="f-group"><label class="f-label">Direction</label><select class="f-select" id="f-dir"><option value="LONG">Long / Buy</option><option value="SHORT">Short / Sell</option></select></div>
+    <div class="f-row">
+      <div class="f-group"><label class="f-label" id="qty-label">Quantity</label><input class="f-input" type="number" id="f-qty" placeholder="0" step="any"></div>
+      <div class="f-group"><label class="f-label">Entry price</label><input class="f-input" type="number" id="f-entry" placeholder="0.00" step="any"></div>
+    </div>
+    <div class="f-row">
+      <div class="f-group"><label class="f-label">Current price <span id="live-tag" class="sbadge" style="display:none;"></span></label><input class="f-input" type="number" id="f-current" placeholder="0.00" step="any"></div>
+      <div class="f-group"><label class="f-label">Currency</label>
+        <select class="f-select" id="f-ccy"><option value="CHF">CHF</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="JPY">JPY</option><option value="SEK">SEK</option><option value="NOK">NOK</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="HKD">HKD</option></select>
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-group"><label class="f-label">FX to CHF <span class="sbadge live" id="fx-live-tag" style="display:none;">live</span></label><input class="f-input" type="number" id="f-fx" value="1.0000" step="0.0001"></div>
+      <div class="f-group"><label class="f-label">Day P&amp;L (CHF)</label><input class="f-input" type="number" id="f-daypnl" placeholder="0.00"></div>
+    </div>
+
+    <!-- Income section -->
+    <div id="income-fields">
+      <div class="f-section" id="income-section-lbl">Income</div>
+
+      <div id="eq-income" style="display:none;">
+        <div class="f-row">
+          <div class="f-group"><label class="f-label">Annual dividend/share</label><input class="f-input" type="number" id="f-div-per-share" placeholder="e.g. 3.00" step="any" oninput="calcDivYield()"></div>
+          <div class="f-group"><label class="f-label">Frequency</label><select class="f-select" id="f-div-freq"><option value="annual">Annual</option><option value="semi">Semi-annual</option><option value="quarterly">Quarterly</option><option value="monthly">Monthly</option></select></div>
+        </div>
+        <div class="calc-box" id="div-calc-box" style="display:none;"></div>
+      </div>
+
+      <div id="fi-income" style="display:none;">
+        <div class="f-row">
+          <div class="f-group"><label class="f-label">Coupon rate (%)</label><input class="f-input" type="number" id="f-coupon-rate" placeholder="e.g. 4.5" step="any" oninput="calcCouponAmt()"></div>
+          <div class="f-group"><label class="f-label">Frequency</label><select class="f-select" id="f-coupon-freq"><option value="semi">Semi-annual</option><option value="annual">Annual</option><option value="quarterly">Quarterly</option><option value="monthly">Monthly</option></select></div>
+        </div>
+        <div class="f-row">
+          <div class="f-group"><label class="f-label">Face / nominal value</label><input class="f-input" type="number" id="f-face-value" placeholder="e.g. 1000" step="any" oninput="calcCouponAmt()"></div>
+          <div class="f-group"><label class="f-label">Maturity</label><input class="f-input" type="date" id="f-maturity"></div>
+        </div>
+        <div class="calc-box" id="coupon-calc-box" style="display:none;"></div>
+      </div>
+
+      <div class="f-label" style="margin-top:10px;">Logged payments</div>
+      <div class="inc-add-row">
+        <input class="f-input" type="date" id="inc-date">
+        <select class="f-select" id="inc-type"><option value="dividend">Dividend</option><option value="coupon">Coupon</option><option value="distribution">Distribution</option><option value="interest">Interest</option><option value="other">Other</option></select>
+        <input class="f-input" type="number" id="inc-amount" placeholder="Amount" step="any">
+        <select class="f-select" id="inc-ccy"><option value="CHF">CHF</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select>
+        <button class="add-inc-btn" onclick="addIncomePayment()">+</button>
+      </div>
+      <div id="income-log-list"></div>
+      <div class="calc-box" id="income-total-box" style="display:none;"></div>
+    </div>
+
+    <div class="f-group"><label class="f-label">Notes</label><input class="f-input" type="text" id="f-notes" placeholder="e.g. hedge, cold wallet, satellite…"></div>
+    <button class="btn-primary" onclick="savePosition()">Save Position</button>
+  </div>
+</div>
+
+<!-- ══ DETAIL MODAL ══ -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal-sheet" id="detail-content"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  RAFFICELLO CAPITAL — standalone app
+//  Storage: localStorage (works offline, no server needed)
+// ═══════════════════════════════════════════════════════════
+
+const SK='rc_pos_v1',HK='rc_hist_v1',FK='rc_fx_v1',PK='rc_ptf_v1';
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TYPE_LABELS={EQ:'Equity',FI:'Bond',OPT:'Option',SP:'Structured Product',FX:'FX',CRY:'Crypto',ALT:'Alternative'};
+const ALT_LABELS={PE:'Private Equity',RE:'Real Estate',HF:'Hedge Fund',COMM:'Commodity',INF:'Infrastructure',ART:'Art/Collectibles',VC:'Venture Capital',OTHER:'Alternative'};
+const SP_TYPES=['BRC','Autocall','Capital Prot.','Tracker','Reverse Conv.','Warrant','Barrier Note','Other'];
+const CCY_LIST=['USD','EUR','GBP','JPY','SEK','NOK','CAD','AUD','HKD','SGD'];
+const PALETTE=['#C9A84C','#378ADD','#4CAF7C','#D85A30','#9B8FE0','#E85D9A','#3DC5A0','#E8783A','#8A9EBD','#D4AF37'];
+const FREQ_MAP={annual:1,semi:2,quarterly:4,monthly:12};
+
+let positions=[],pnlHistory=[],fxRates={},portfolios=[];
+let activePortfolio='__all__',activeTab='all',activePeriod='all';
+let chart=null,editingId=null,editingPtfId=null,selectedColor=PALETTE[0],selectedSpType='BRC';
+let _pendingIncomeLog=[];
+
+// ── localStorage storage ──
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+function load(){
+  positions=lsGet(SK)||[];
+  pnlHistory=lsGet(HK)||[];
+  fxRates=lsGet(FK)||{};
+  portfolios=lsGet(PK)||[];
+  if(!portfolios.length){
+    portfolios=[{id:'default',name:'Main Portfolio',desc:'Core holdings',color:PALETTE[0]}];
+    lsSet(PK,portfolios);
+  }
+  positions.forEach(p=>{if(!p.portfolioId)p.portfolioId=portfolios[0].id;if(!p.incomeLog)p.incomeLog=[];});
+  activePortfolio=portfolios[0].id;
+  refreshFX().then(()=>{ render(); hideSplash(); });
+}
+
+function save(){
+  lsSet(SK,positions);lsSet(PK,portfolios);lsSet(FK,fxRates);
+  recordHistory();lsSet(HK,pnlHistory);
+}
+
+function recordHistory(){
+  const today=new Date().toISOString().slice(0,10);
+  portfolios.forEach(p=>{
+    const tot=calcPnlForPortfolio(p.id);
+    const rec=pnlHistory.find(h=>h.date===today&&h.pid===p.id);
+    if(rec)rec.pnl=tot;else pnlHistory.push({date:today,pid:p.id,pnl:tot});
+  });
+  const overall=calcTotalPnlAll();
+  const rec=pnlHistory.find(h=>h.date===today&&!h.pid);
+  if(rec)rec.pnl=overall;else pnlHistory.push({date:today,pnl:overall});
+  if(pnlHistory.length>3000)pnlHistory=pnlHistory.slice(-3000);
+}
+
+function hideSplash(){
+  setTimeout(()=>{document.getElementById('splash').classList.add('out');},900);
+}
+
+// ── FX ──
+async function refreshFX(){
+  try{
+    const pairs=CCY_LIST.map(c=>c+'CHF=X').join(',');
+    const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${pairs}&range=1d&interval=1d`);
+    const d=await r.json();
+    (d?.spark?.result||[]).forEach(s=>{const ccy=s.symbol.replace('CHF=X','');const px=s?.response?.[0]?.meta?.regularMarketPrice;if(px)fxRates[ccy]=px;});
+    fxRates['CHF']=1.0;lsSet(FK,fxRates);renderFXBar();
+  }catch(e){
+    try{const r2=await fetch('https://open.er-api.com/v6/latest/CHF');const d2=await r2.json();if(d2.rates){Object.entries(d2.rates).forEach(([k,v])=>{fxRates[k]=1/v;});fxRates['CHF']=1.0;lsSet(FK,fxRates);renderFXBar();}}catch(e2){}
+  }
+}
+function fxToCHF(ccy){return ccy==='CHF'?1:(fxRates[ccy]||null);}
+function renderFXBar(){
+  document.getElementById('fx-bar').innerHTML=['USD','EUR','GBP','JPY','SEK','NOK'].map(c=>{
+    const r=fxRates[c];return`<div class="fx-chip">${c}/CHF <span>${r?r.toFixed(4):'—'}</span></div>`;
+  }).join('');
+}
+
+// ── P&L ──
+function calcPosPnl(p){const m=p.type==='OPT'?(p.multiplier||100):1,d=p.dir==='SHORT'?-1:1;return((p.current-p.entry)*p.qty*m*d)/(p.fx||1);}
+function calcPosValue(p){const m=p.type==='OPT'?(p.multiplier||100):1;return(p.current*p.qty*m)/(p.fx||1);}
+function calcPnlForPortfolio(pid){return positions.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+calcPosPnl(p),0);}
+function calcValueForPortfolio(pid){return positions.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+calcPosValue(p),0);}
+function calcTotalPnlAll(){return positions.reduce((s,p)=>s+calcPosPnl(p),0);}
+function calcTotalValueAll(){return positions.reduce((s,p)=>s+calcPosValue(p),0);}
+function calcDayPnlForPortfolio(pid){return positions.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+(p.dayPnl||0),0);}
+function calcPositionIncomeChf(p){return(p.incomeLog||[]).reduce((s,e)=>{const fx2=fxToCHF(e.ccy||p.ccy)||1;return s+(e.amount||0)*fx2;},0);}
+function calcTotalIncomeForPortfolio(pid){return positions.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+calcPositionIncomeChf(p),0);}
+function calcTotalIncomeAll(){return positions.reduce((s,p)=>s+calcPositionIncomeChf(p),0);}
+function estimatedAnnualIncomeCHF(p){const fx=p.fx||1;if(p.type==='EQ'&&p.divPerShare&&p.qty)return(p.divPerShare*p.qty)/fx;if((p.type==='FI'||p.type==='SP')&&p.couponRate&&p.faceValue&&p.qty)return(p.couponRate/100)*(p.faceValue*p.qty)/fx;return 0;}
+function calcEstimatedAnnualIncomeForPortfolio(pid){return positions.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+estimatedAnnualIncomeCHF(p),0);}
+function activePositions(){return activePortfolio==='__all__'?positions:positions.filter(p=>p.portfolioId===activePortfolio);}
+
+// ── FORMAT ──
+function fmtC(n,dec=0){return(n<0?'−':'')+'CHF '+Math.abs(n).toLocaleString('de-CH',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+function fmtC2(n){return fmtC(n,2);}
+function fmtP(n,ccy,dec=2){return n.toLocaleString('de-CH',{minimumFractionDigits:dec,maximumFractionDigits:dec})+' '+ccy;}
+
+// ── PORTFOLIO MANAGEMENT ──
+function ptfById(id){return portfolios.find(p=>p.id===id);}
+function switchPortfolio(id){
+  activePortfolio=id;activePeriod='all';activeTab='all';
+  const isAll=id==='__all__';
+  document.getElementById('overview-section').style.display=isAll?'block':'none';
+  document.getElementById('portfolio-section').style.display=isAll?'none':'block';
+  const fab=document.getElementById('main-fab');fab.style.display=isAll?'none':'block';
+  buildPtfRow();render();
+}
+function buildPtfRow(){
+  const row=document.getElementById('ptf-row');
+  const chips=[`<div class="ptf-pill ${activePortfolio==='__all__'?'active':''}" onclick="switchPortfolio('__all__')">All</div>`];
+  portfolios.forEach(p=>{
+    const isAct=activePortfolio===p.id;
+    chips.push(`<div class="ptf-pill ${isAct?'active':''}" onclick="switchPortfolio('${p.id}')" style="${isAct?'background:'+p.color+';border-color:'+p.color+';color:#0a0a0f;':''}" ondblclick="openPtfModal('${p.id}')">${p.name}</div>`);
+  });
+  chips.push(`<div class="ptf-pill add-pill" onclick="openPtfModal()">+ New</div>`);
+  row.innerHTML=chips.join('');
+  const p=ptfById(activePortfolio);
+  document.getElementById('app-title').textContent=activePortfolio==='__all__'?'Rafficello Capital':(p?p.name:'Portfolio');
+}
+function openPtfModal(id=null){
+  editingPtfId=id;
+  document.getElementById('ptf-modal-title').textContent=id?'Edit Portfolio':'New Portfolio';
+  document.getElementById('ptf-del-btn').style.display=id&&portfolios.length>1?'block':'none';
+  if(id){const p=ptfById(id);document.getElementById('ptf-name').value=p.name;document.getElementById('ptf-desc').value=p.desc||'';selectedColor=p.color;}
+  else{document.getElementById('ptf-name').value='';document.getElementById('ptf-desc').value='';selectedColor=PALETTE[portfolios.length%PALETTE.length];}
+  renderColorPicker();document.getElementById('ptf-modal').classList.add('show');
+}
+function renderColorPicker(){document.getElementById('color-row').innerHTML=PALETTE.map(c=>`<div class="color-swatch ${selectedColor===c?'selected':''}" style="background:${c};" onclick="selectColor('${c}')"></div>`).join('');}
+function selectColor(c){selectedColor=c;renderColorPicker();}
+function savePortfolio(){
+  const name=document.getElementById('ptf-name').value.trim();if(!name){alert('Please enter a name.');return;}
+  const desc=document.getElementById('ptf-desc').value.trim();
+  if(editingPtfId){const p=ptfById(editingPtfId);if(p){p.name=name;p.desc=desc;p.color=selectedColor;}}
+  else{const id='ptf_'+Date.now().toString(36);portfolios.push({id,name,desc,color:selectedColor});activePortfolio=id;}
+  save();closeModal('ptf-modal');buildPtfRow();
+  if(!editingPtfId)switchPortfolio(activePortfolio);else render();
+}
+function deletePortfolio(){
+  if(!confirm('Delete portfolio and all its positions?'))return;
+  positions=positions.filter(p=>p.portfolioId!==editingPtfId);portfolios=portfolios.filter(p=>p.id!==editingPtfId);
+  save();closeModal('ptf-modal');activePortfolio=portfolios[0]?.id||'__all__';switchPortfolio(activePortfolio);
+}
+
+// ── REFRESH ──
+async function refreshAll(){
+  const btn=document.getElementById('refresh-btn');btn.classList.add('refreshing');
+  await refreshFX();
+  for(const p of positions.filter(x=>x.liveSource&&x.liveTicker)){
+    try{const px=await fetchLivePx(p.liveSource,p.liveTicker);if(px){p.current=px;p.liveUpdated=new Date().toISOString();}}catch(e){}
+  }
+  for(const p of positions){const auto=fxToCHF(p.ccy);if(auto){p.fx=auto;p.fxAuto=true;}}
+  save();if(activePortfolio==='__all__')renderOverview();else render();
+  btn.classList.remove('refreshing');
+}
+async function fetchLivePx(source,ticker){
+  if(source==='yahoo'){const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${encodeURIComponent(ticker)}&range=1d&interval=1d`);const d=await r.json();return d?.spark?.result?.[0]?.response?.[0]?.meta?.regularMarketPrice||null;}
+  if(source==='coingecko'){const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ticker)}&vs_currencies=usd`);const d=await r.json();return d?.[ticker]?.usd||null;}
+  return null;
+}
+
+// ── PERIOD ──
+function histForPortfolio(){return activePortfolio==='__all__'?pnlHistory.filter(h=>!h.pid):pnlHistory.filter(h=>h.pid===activePortfolio);}
+function getMonthsInHistory(){const seen=new Set();histForPortfolio().forEach(h=>seen.add(h.date.slice(0,7)));seen.add(new Date().toISOString().slice(0,7));return Array.from(seen).sort();}
+function periodLabel(key){if(key==='all')return'All time';if(key==='ytd')return'YTD';const[y,m]=key.split('-');return MONTHS[parseInt(m)-1]+' '+y;}
+function filterHistByPeriod(period){
+  const hist=histForPortfolio();if(period==='all')return hist;
+  if(period==='ytd'){const s=new Date().getFullYear()+'-01-01';return hist.filter(h=>h.date>=s);}
+  return hist.filter(h=>h.date.startsWith(period));
+}
+function calcMonthPnl(mk){const rows=histForPortfolio().filter(h=>h.date.startsWith(mk));if(!rows.length)return null;return rows[rows.length-1].pnl-rows[0].pnl;}
+function calcMonthIncome(mk){
+  const pool=activePortfolio==='__all__'?positions:positions.filter(p=>p.portfolioId===activePortfolio);
+  return pool.reduce((s,p)=>{return s+(p.incomeLog||[]).filter(e=>e.date&&e.date.startsWith(mk)).reduce((ss,e)=>{const fx2=fxToCHF(e.ccy||p.ccy)||1;return ss+e.amount*fx2;},0);},0);
+}
+function buildPeriodChips(){
+  const months=getMonthsInHistory().slice().reverse();
+  document.getElementById('period-row').innerHTML=[{key:'all',label:'All time'},{key:'ytd',label:'YTD'},...months.map(m=>({key:m,label:periodLabel(m)}))].map(c=>`<div class="period-chip ${activePeriod===c.key?'active':''}" onclick="setPeriod('${c.key}')">${c.label}</div>`).join('');
+}
+function setPeriod(key){activePeriod=key;buildPeriodChips();renderChart();renderPeriodMetrics();}
+function renderPeriodMetrics(){
+  const lbl=document.getElementById('m-pnl-lbl'),sub=document.getElementById('m-pnl-sub'),el=document.getElementById('m-pnl');
+  const hist=histForPortfolio();let pnl;
+  if(activePeriod==='all'){lbl.textContent='P&L';sub.textContent='';pnl=calcPnlForPortfolio(activePortfolio);}
+  else if(activePeriod==='ytd'){lbl.textContent='YTD P&L';sub.textContent=new Date().getFullYear();const s=new Date().getFullYear()+'-01-01',rows=hist.filter(h=>h.date>=s);pnl=rows.length?rows[rows.length-1].pnl-rows[0].pnl:calcPnlForPortfolio(activePortfolio);}
+  else{lbl.textContent=periodLabel(activePeriod);sub.textContent='period';const rows=hist.filter(h=>h.date.startsWith(activePeriod));pnl=rows.length?rows[rows.length-1].pnl-rows[0].pnl:0;}
+  el.textContent=fmtC(pnl);el.className='m-val '+(pnl>=0?'up':'dn');
+}
+
+// ── CHART ──
+function renderChart(){
+  const rows=filterHistByPeriod(activePeriod);
+  const baseline=activePeriod!=='all'&&rows.length?rows[0].pnl:0;
+  const labels=rows.map(h=>new Date(h.date).toLocaleDateString('de-CH',{day:'2-digit',month:'short'}));
+  const data=rows.map(h=>Math.round(h.pnl-baseline));
+  if(chart)chart.destroy();
+  const lastVal=data.length?data[data.length-1]:0;
+  const ptf=ptfById(activePortfolio);
+  const lc=ptf?.color||(lastVal>=0?'#4CAF7C':'#E05A4A');
+  const gc='rgba(255,255,255,0.05)',tc='rgba(255,255,255,0.35)';
+  chart=new Chart(document.getElementById('pnlChart'),{
+    type:'line',
+    data:{labels,datasets:[{label:'P&L',data,borderColor:lc,borderWidth:2,pointBackgroundColor:data.map(v=>v>=0?lc:'#E05A4A'),pointRadius:data.length<=25?4:data.length<=60?2:0,fill:{target:'origin',above:lc+'18',below:'rgba(224,90,74,0.08)'},tension:0.4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(19,19,28,0.9)',titleColor:'#f0efe8',bodyColor:'#C9A84C',callbacks:{label:ctx=>fmtC(ctx.parsed.y)}}},
+      scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxTicksLimit:6,autoSkip:true}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:v=>fmtC(v)}}}}
+  });
+  const meta=document.getElementById('chart-meta');
+  if(rows.length>=2){const ch=data[data.length-1],sign=ch>=0?'+':'',cls=ch>=0?'up':'dn';meta.innerHTML=`<div class="chart-meta-item">Change <span class="${cls}">${sign}${fmtC(ch)}</span></div><div class="chart-meta-item">Days <span>${rows.length}</span></div>`;}
+  else meta.innerHTML=`<div class="chart-meta-item" style="color:var(--silver);font-size:11px;">Returns daily as you use the app.</div>`;
+}
+function renderMonthlyGrid(){
+  const months=getMonthsInHistory().slice().reverse().slice(0,12);const grid=document.getElementById('monthly-grid');
+  if(!months.length){grid.innerHTML='<div style="font-size:11px;color:var(--silver);padding:8px 0;grid-column:1/-1;">History builds as you use the app daily.</div>';return;}
+  grid.innerHTML=months.map(m=>{
+    const pnl=calcMonthPnl(m),inc=calcMonthIncome(m);
+    const cls=pnl===null?'neu':pnl>0?'up':pnl<0?'dn':'neu';
+    const val=pnl===null?'—':(pnl>=0?'+':'')+fmtC(pnl);
+    const incStr=inc>0?`<div class="mt-inc">+${fmtC(inc)}</div>`:'';
+    return`<div class="month-tile ${activePeriod===m?'active':''}" onclick="setPeriod('${m}')"><div class="mt-name">${periodLabel(m)}</div><div class="mt-pnl ${cls}">${val}</div>${incStr}</div>`;
+  }).join('');
+}
+
+// ── OVERVIEW ──
+function renderOverview(){
+  document.getElementById('ptf-overview-cards').innerHTML=portfolios.map(p=>{
+    const pnl=calcPnlForPortfolio(p.id),val=calcValueForPortfolio(p.id),inc=calcTotalIncomeForPortfolio(p.id);
+    const cnt=positions.filter(x=>x.portfolioId===p.id).length;
+    const pc=pnl>=0?'up':'dn',sign=pnl>=0?'+':'';
+    return`<div class="ptf-card" onclick="switchPortfolio('${p.id}')" style="border-left:3px solid ${p.color};">
+      <div class="ptf-card-dot" style="background:${p.color};"></div>
+      <div class="ptf-card-info"><div class="ptf-card-name">${p.name}</div><div class="ptf-card-sub">${cnt} position${cnt!==1?'s':''} · ${p.desc||''}</div></div>
+      <div class="ptf-card-right"><div class="ptf-card-pnl ${pc}">${sign}${fmtC(pnl)}</div><div class="ptf-card-val">${fmtC(val)}</div>${inc>0?`<div class="ptf-card-inc">+${fmtC(inc)} income</div>`:''}</div>
+    </div>`;
+  }).join('');
+  const tp=calcTotalPnlAll(),tv=calcTotalValueAll(),ti=calcTotalIncomeAll(),tr=tp+ti;
+  document.getElementById('ov-val').textContent=fmtC(tv);
+  const pe=document.getElementById('ov-pnl');pe.textContent=(tp>=0?'+':'')+fmtC(tp);pe.className='s-val '+(tp>=0?'up':'dn');
+  document.getElementById('ov-income').textContent=ti>0?'+'+fmtC(ti):'—';
+  const re=document.getElementById('ov-return');re.textContent=(tr>=0?'+':'')+fmtC(tr);re.className='s-val '+(tr>=0?'up':'dn');
+  document.getElementById('ov-pos').textContent=positions.length;
+  document.getElementById('ov-date').textContent=new Date().toLocaleDateString('de-CH',{weekday:'long',day:'numeric',month:'long'});
+}
+
+// ── RENDER ──
+function setTab(t){
+  activeTab=t;
+  const lm={all:'All',EQ:'Equity',FI:'Bonds',OPT:'Options',SP:'SP',FX:'FX',CRY:'Crypto',ALT:'Alts'};
+  document.querySelectorAll('.asset-tab').forEach(el=>el.classList.toggle('active',el.textContent.trim()===lm[t]));
+  renderPositions();
+}
+function render(){
+  if(activePortfolio==='__all__'){renderOverview();return;}
+  const pid=activePortfolio;
+  const income=calcTotalIncomeForPortfolio(pid),pnl=calcPnlForPortfolio(pid);
+  const totalReturn=pnl+income,val=calcValueForPortfolio(pid),dp=calcDayPnlForPortfolio(pid);
+  document.getElementById('m-val').textContent=fmtC(val);
+  const dpEl=document.getElementById('m-day');dpEl.textContent=fmtC(dp);dpEl.className='m-val '+(dp>=0?'up':'dn');
+  const trEl=document.getElementById('m-return');trEl.textContent=fmtC(totalReturn);trEl.className='m-val sm '+(totalReturn>=0?'up':'dn');
+  // income banner
+  const estAnnual=calcEstimatedAnnualIncomeForPortfolio(pid);
+  const banner=document.getElementById('income-banner-wrap');
+  if(estAnnual>0){
+    const yieldPct=val>0?(estAnnual/val*100).toFixed(2):null;
+    banner.innerHTML=`<div class="income-banner"><div class="ib-left"><div class="ib-title">Est. annual income</div><div class="ib-val">${fmtC(estAnnual)}</div><div class="ib-sub">from coupon & dividend rates</div></div>${yieldPct?`<div><div class="ib-yield-lbl">Yield</div><div class="ib-yield">${yieldPct}%</div></div>`:''}</div>`;
+  }else banner.innerHTML='';
+  renderPeriodMetrics();buildPeriodChips();renderChart();renderMonthlyGrid();renderPositions();
+}
+function renderPositions(){
+  const list=document.getElementById('positions-list');
+  let pool=activePositions();if(activeTab!=='all')pool=pool.filter(p=>p.type===activeTab);
+  if(!pool.length){list.innerHTML=`<div class="empty-state"><div class="e-icon">◈</div><div class="e-text">No positions yet.<br>Tap the button below to begin.</div></div>`;return;}
+  list.innerHTML=pool.map(p=>{
+    const pnl=calcPosPnl(p),val=calcPosValue(p),income=calcPositionIncomeChf(p);
+    const pc=pnl>=0?'up':'dn',sign=pnl>=0?'+':'';
+    const badge=p.type==='OPT'?`<span class="dir-tag ${p.optType}">${p.optType}</span>`:`<span class="dir-tag ${p.dir}">${p.dir}</span>`;
+    const isLive=!!p.liveSource;
+    const iconLabel=p.type==='SP'?(p.spType||'SP').slice(0,3).toUpperCase():p.type==='ALT'?(p.altType||'ALT').slice(0,3).toUpperCase():p.type;
+    const dec=p.type==='CRY'||p.type==='FX'?4:2;
+    const meta=p.type==='OPT'?`${p.qty}×${fmtP(p.entry,p.ccy,2)} K=${p.strike}${p.expiry?' exp '+p.expiry:''}`:`${Number(p.qty).toLocaleString('de-CH',{maximumFractionDigits:8})}×${fmtP(p.entry,p.ccy,dec)}`;
+    const ptf=ptfById(p.portfolioId);
+    const ptfTag=activePortfolio==='__all__'&&ptf?`<span class="isin-chip" style="color:${ptf.color};">${ptf.name}</span>`:'';
+    const isinTag=p.isin?`<span class="isin-chip">${p.isin.slice(0,4)}…</span>`:'';
+    return`<div class="pos-card" onclick="openDetail('${p.id}')">
+      <div class="pos-badge ${p.type}">${iconLabel}</div>
+      <div class="pos-info"><div class="pos-name">${p.name}${badge}</div><div class="pos-meta"><div class="live-dot ${isLive?'':'stale'}"></div>${meta}${isinTag}${ptfTag}</div></div>
+      <div class="pos-right"><div class="pos-pnl ${pc}">${sign}${fmtC(pnl)}</div>${income>0?`<div class="pos-income">+${fmtC(income)}</div>`:`<div class="pos-val">${fmtC(val)}</div>`}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── INCOME UI ──
+function calcDivYield(){
+  const dps=parseFloat(document.getElementById('f-div-per-share').value)||0,qty=parseFloat(document.getElementById('f-qty').value)||0,entry=parseFloat(document.getElementById('f-entry').value)||0;
+  const freq=document.getElementById('f-div-freq').value,box=document.getElementById('div-calc-box');
+  if(!dps){box.style.display='none';return;}
+  const annual=dps*qty,perPayment=annual/FREQ_MAP[freq],fxR=parseFloat(document.getElementById('f-fx').value)||1;
+  const yieldPct=entry>0?(dps/entry*100).toFixed(2):null;
+  box.style.display='block';box.innerHTML=`<strong>Annual dividend:</strong> ${fmtC2(annual/fxR)} · per payment: ${fmtC2(perPayment/fxR)}${yieldPct?' · yield: <strong>'+yieldPct+'%</strong>':''}`;
+}
+function calcCouponAmt(){
+  const rate=parseFloat(document.getElementById('f-coupon-rate').value)||0,face=parseFloat(document.getElementById('f-face-value').value)||0,qty=parseFloat(document.getElementById('f-qty').value)||0;
+  const freq=document.getElementById('f-coupon-freq').value,box=document.getElementById('coupon-calc-box');
+  if(!rate||!face){box.style.display='none';return;}
+  const nominal=face*(qty||1),annual=(rate/100)*nominal,perPayment=annual/FREQ_MAP[freq],fxR=parseFloat(document.getElementById('f-fx').value)||1;
+  box.style.display='block';box.innerHTML=`<strong>Annual coupon:</strong> ${fmtC2(annual/fxR)} · per payment: ${fmtC2(perPayment/fxR)} · rate: <strong>${rate}%</strong>`;
+}
+function renderIncomeLogs(){
+  const list=document.getElementById('income-log-list');
+  if(!_pendingIncomeLog.length){list.innerHTML='';document.getElementById('income-total-box').style.display='none';return;}
+  list.innerHTML=_pendingIncomeLog.map((e,i)=>`<div class="inc-log-item"><span class="ili-date">${e.date}</span><span class="ili-type">${e.type}</span><span class="ili-amt">${e.amount.toFixed(2)} ${e.ccy}</span><button class="ili-del" onclick="removeIncomeLog(${i})">✕</button></div>`).join('');
+  const total=_pendingIncomeLog.reduce((s,e)=>{const fx2=fxToCHF(e.ccy)||1;return s+e.amount*fx2;},0);
+  const box=document.getElementById('income-total-box');box.style.display='block';
+  box.innerHTML=`<strong>Total logged:</strong> ${fmtC2(total)}`;
+}
+function addIncomePayment(){
+  const date=document.getElementById('inc-date').value||new Date().toISOString().slice(0,10);
+  const type=document.getElementById('inc-type').value;
+  const amount=parseFloat(document.getElementById('inc-amount').value);
+  const ccy=document.getElementById('inc-ccy').value;
+  if(!amount||isNaN(amount)){alert('Enter an amount.');return;}
+  _pendingIncomeLog.push({date,type,amount,ccy});
+  document.getElementById('inc-amount').value='';renderIncomeLogs();
+}
+function removeIncomeLog(i){_pendingIncomeLog.splice(i,1);renderIncomeLogs();}
+
+// ── SECURITY SEARCH ──
+let _sd=null;
+function onSearchInput(){clearTimeout(_sd);const v=document.getElementById('f-search').value.trim();if(v.length>=2)_sd=setTimeout(()=>runSecuritySearch(true),700);}
+async function runSecuritySearch(){
+  const query=document.getElementById('f-search').value.trim();if(!query)return;
+  const status=document.getElementById('search-status'),resultsEl=document.getElementById('search-results');
+  status.textContent='Searching…';status.className='f-status info';resultsEl.style.display='none';
+  try{
+    const r=await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&lang=en-US&region=US&quotesCount=8&newsCount=0`);
+    const d=await r.json();const quotes=(d?.quotes||[]).filter(q=>q.symbol&&q.typeDisp!=='NEWS');
+    if(!quotes.length)throw new Error();
+    renderSearchResults(quotes);status.textContent=`${quotes.length} result${quotes.length!==1?'s':''} found`;status.className='f-status ok';
+  }catch(e){
+    try{
+      const r2=await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${encodeURIComponent(query)}&range=1d&interval=1d`);
+      const d2=await r2.json();const meta=d2?.spark?.result?.[0]?.response?.[0]?.meta;
+      if(meta){renderSearchResults([{symbol:query,longname:meta.instrumentType||query,exchDisp:'',regularMarketPrice:meta.regularMarketPrice,currency:meta.currency}]);status.textContent='Found';status.className='f-status ok';}
+      else throw new Error();
+    }catch(e2){status.textContent='Not found.';status.className='f-status err';}
+  }
+}
+function renderSearchResults(quotes){
+  const el=document.getElementById('search-results');
+  el.innerHTML=quotes.map((q,i)=>{
+    const name=q.longname||q.shortname||q.symbol;
+    const px=q.regularMarketPrice?q.regularMarketPrice.toFixed(2)+' '+(q.currency||''):'';
+    return`<div class="sri" onclick="selectSearchResult(${i})"><div class="sri-l"><div class="sri-sym">${q.symbol}</div><div class="sri-name">${name}${q.exchDisp?' · '+q.exchDisp:''}</div></div><div class="sri-r">${px}</div></div>`;
+  }).join('');
+  el.style.display='block';el._quotes=quotes;
+}
+async function selectSearchResult(i){
+  const quotes=document.getElementById('search-results')._quotes;const q=quotes[i];
+  document.getElementById('search-results').style.display='none';
+  document.getElementById('search-status').textContent='Loading price…';document.getElementById('search-status').className='f-status info';
+  try{
+    const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${encodeURIComponent(q.symbol)}&range=1d&interval=1d`);
+    const d=await r.json();const meta=d?.spark?.result?.[0]?.response?.[0]?.meta;
+    const px=meta?.regularMarketPrice||q.regularMarketPrice;const ccy=(meta?.currency||q.currency||'USD').toUpperCase();
+    const name=q.longname||q.shortname||q.symbol;
+    if(!document.getElementById('f-name').value)document.getElementById('f-name').value=name.length>30?q.symbol:name;
+    if(px)document.getElementById('f-current').value=px.toFixed(4);
+    document.getElementById('f-ccy').value=ccy;
+    const fa=fxToCHF(ccy);if(fa){document.getElementById('f-fx').value=fa.toFixed(4);document.getElementById('fx-live-tag').style.display='inline';}
+    const lt=document.getElementById('live-tag');lt.textContent='live';lt.className='sbadge live';lt.style.display='inline';
+    window._pendingLive={source:'yahoo',ticker:q.symbol};
+    const sv=document.getElementById('f-search').value.trim();
+    if(/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(sv)&&!document.getElementById('f-isin').value){document.getElementById('f-isin').value=sv;document.getElementById('isin-status').textContent=`ISIN stored · ${q.symbol}`;document.getElementById('isin-status').className='f-status ok';}
+    document.getElementById('search-status').textContent=`${q.symbol}: ${px?px.toFixed(2):''} ${ccy}`;document.getElementById('search-status').className='f-status ok';
+    calcDivYield();calcCouponAmt();
+  }catch(e){document.getElementById('search-status').textContent='Price fetch failed.';document.getElementById('search-status').className='f-status err';}
+}
+async function lookupByIsin(){
+  const isin=document.getElementById('f-isin').value.trim().toUpperCase();
+  if(!isin||!/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(isin)){document.getElementById('isin-status').textContent='Invalid ISIN.';document.getElementById('isin-status').className='f-status err';return;}
+  document.getElementById('isin-status').textContent='Searching…';document.getElementById('isin-status').className='f-status info';
+  try{
+    const r=await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(isin)}&lang=en-US&region=US&quotesCount=6&newsCount=0`);
+    const d=await r.json();const quotes=(d?.quotes||[]).filter(q=>q.symbol);if(!quotes.length)throw new Error();
+    document.getElementById('f-search').value=isin;renderSearchResults(quotes);
+    document.getElementById('isin-status').textContent=`${quotes.length} match${quotes.length!==1?'es':''} — select above`;document.getElementById('isin-status').className='f-status ok';
+  }catch(e){document.getElementById('isin-status').textContent='Not found via ISIN.';document.getElementById('isin-status').className='f-status err';}
+}
+
+// ── LIVE LOOKUPS ──
+async function fetchCryptoPrice(){
+  const coin=document.getElementById('f-coin').value.trim().toLowerCase();if(!coin)return;
+  const status=document.getElementById('fetch-cry-status');status.textContent='Fetching…';status.className='f-status info';
+  try{
+    const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(coin)}&vs_currencies=usd,chf`);
+    const d=await r.json();if(!d[coin])throw new Error();
+    const px=d[coin].usd;if(!document.getElementById('f-name').value)document.getElementById('f-name').value=coin.charAt(0).toUpperCase()+coin.slice(1);
+    document.getElementById('f-current').value=px.toFixed(2);document.getElementById('f-ccy').value='USD';
+    const fa=fxToCHF('USD');if(fa){document.getElementById('f-fx').value=fa.toFixed(4);document.getElementById('fx-live-tag').style.display='inline';}
+    const lt=document.getElementById('live-tag');lt.textContent='live';lt.className='sbadge live';lt.style.display='inline';
+    window._pendingLive={source:'coingecko',ticker:coin};
+    status.textContent=`${coin}: $${px.toLocaleString()}`;status.className='f-status ok';
+  }catch(e){status.textContent='Not found.';status.className='f-status err';}
+}
+async function fetchUnderlyingPrice(){
+  const ticker=document.getElementById('f-opt-under').value.trim();if(!ticker)return;
+  const status=document.getElementById('fetch-opt-status');status.textContent='Fetching…';status.className='f-status info';
+  try{
+    const map={DAX:'^GDAXI',SMI:'^SSMI',SPX:'^GSPC',NDX:'^NDX',SX5E:'^STOXX50E',VIX:'^VIX',FTSE:'^FTSE',CAC:'^FCHI'};
+    const yT=map[ticker.toUpperCase()]||ticker;
+    const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${encodeURIComponent(yT)}&range=1d&interval=1d`);
+    const d=await r.json();const meta=d?.spark?.result?.[0]?.response?.[0]?.meta;if(!meta)throw new Error();
+    const px=meta.regularMarketPrice,ccy=(meta.currency||'EUR').toUpperCase();
+    document.getElementById('f-under-px').value=px.toFixed(2);document.getElementById('f-ccy').value=ccy;
+    const fa=fxToCHF(ccy);if(fa){document.getElementById('f-fx').value=fa.toFixed(4);document.getElementById('fx-live-tag').style.display='inline';}
+    if(!document.getElementById('f-name').value)document.getElementById('f-name').value=(ticker+' '+(document.getElementById('f-opt-type').value||'OPT')).toUpperCase();
+    window._pendingLive={source:'yahoo',ticker:yT};
+    status.textContent=`${ticker.toUpperCase()}: ${px.toLocaleString()} ${ccy}`;status.className='f-status ok';
+  }catch(e){status.textContent='Not found.';status.className='f-status err';}
+}
+async function fetchFxPair(){
+  const buy=document.getElementById('f-fx-buy').value.trim().toUpperCase(),sell=document.getElementById('f-fx-sell').value.trim().toUpperCase();if(!buy||!sell)return;
+  const status=document.getElementById('fetch-fx-status');status.textContent='Fetching…';status.className='f-status info';
+  try{
+    const pair=buy+sell+'=X';const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${pair}&range=1d&interval=1d`);
+    const d=await r.json();const px=d?.spark?.result?.[0]?.response?.[0]?.meta?.regularMarketPrice;if(!px)throw new Error();
+    if(!document.getElementById('f-name').value)document.getElementById('f-name').value=`${buy}/${sell}`;
+    document.getElementById('f-current').value=px.toFixed(4);document.getElementById('f-entry').value=document.getElementById('f-entry').value||px.toFixed(4);
+    document.getElementById('f-ccy').value=sell;
+    const fa=fxToCHF(sell);if(fa){document.getElementById('f-fx').value=fa.toFixed(4);document.getElementById('fx-live-tag').style.display='inline';}
+    window._pendingLive={source:'yahoo',ticker:pair};
+    const lt=document.getElementById('live-tag');lt.textContent='live';lt.className='sbadge live';lt.style.display='inline';
+    status.textContent=`${buy}/${sell}: ${px.toFixed(4)}`;status.className='f-status ok';
+  }catch(e){status.textContent='Not found.';status.className='f-status err';}
+}
+
+// ── SP TYPE ──
+function renderSpTypeGrid(){document.getElementById('sp-type-grid').innerHTML=SP_TYPES.map(t=>`<button class="sp-btn ${selectedSpType===t?'active':''}" onclick="selectSpType('${t}')">${t}</button>`).join('');}
+function selectSpType(t){selectedSpType=t;renderSpTypeGrid();}
+
+// ── FORM ──
+function updateFormFields(){
+  const t=document.getElementById('f-type').value;
+  document.getElementById('sec-search-section').style.display=['EQ','FI','SP'].includes(t)?'block':'none';
+  document.getElementById('cry-section').style.display=t==='CRY'?'block':'none';
+  document.getElementById('opt-section').style.display=t==='OPT'?'block':'none';
+  document.getElementById('fx-section').style.display=t==='FX'?'block':'none';
+  document.getElementById('alt-section').style.display=t==='ALT'?'block':'none';
+  document.getElementById('sp-section').style.display=t==='SP'?'block':'none';
+  document.getElementById('qty-label').textContent=t==='CRY'?'Amount (coins)':t==='FI'||t==='SP'?'Nominal / Units':'Quantity';
+  document.getElementById('income-fields').style.display=['EQ','FI','SP','ALT'].includes(t)?'block':'none';
+  document.getElementById('eq-income').style.display=t==='EQ'?'block':'none';
+  document.getElementById('fi-income').style.display=t==='FI'||t==='SP'?'block':'none';
+  document.getElementById('income-section-lbl').textContent=t==='EQ'?'Dividends':t==='FI'?'Coupons':'Income';
+  const subs={EQ:'Yahoo Finance · ticker or ISIN',FI:'Yahoo Finance · ticker or ISIN',SP:'Search by ISIN, ticker or name',OPT:'Underlying live · premium manual',CRY:'CoinGecko live',FX:'Live FX auto-loaded',ALT:'Manual valuation'};
+  document.getElementById('modal-sub').textContent=subs[t]||'';
+  if(t==='SP')renderSpTypeGrid();
+  if(t==='CRY')document.getElementById('f-ccy').value='USD';
+  window._pendingLive=null;
+  document.getElementById('search-results').style.display='none';
+  ['search-status','fetch-cry-status','fetch-opt-status','fetch-fx-status','isin-status'].forEach(i=>{const el=document.getElementById(i);if(el){el.textContent='';el.className='f-status';}});
+}
+function populatePtfSelect(selId){document.getElementById('f-portfolio').innerHTML=portfolios.map(p=>`<option value="${p.id}" ${p.id===selId?'selected':''}>${p.name}</option>`).join('');}
+
+function openAddModal(id=null){
+  editingId=id;window._pendingLive=null;_pendingIncomeLog=[];
+  document.getElementById('live-tag').style.display='none';document.getElementById('fx-live-tag').style.display='none';
+  ['search-status','fetch-cry-status','fetch-opt-status','fetch-fx-status','isin-status'].forEach(i=>{const el=document.getElementById(i);if(el){el.textContent='';el.className='f-status';}});
+  document.getElementById('search-results').style.display='none';
+  const defPtf=activePortfolio==='__all__'?portfolios[0].id:activePortfolio;
+  document.getElementById('inc-date').value=new Date().toISOString().slice(0,10);
+  if(id){
+    const p=positions.find(x=>x.id===id);if(!p)return;
+    document.getElementById('modal-title').textContent='Edit Position';
+    populatePtfSelect(p.portfolioId||defPtf);
+    document.getElementById('f-type').value=p.type;document.getElementById('f-name').value=p.name;
+    document.getElementById('f-dir').value=p.dir;document.getElementById('f-qty').value=p.qty;
+    document.getElementById('f-entry').value=p.entry;document.getElementById('f-current').value=p.current;
+    document.getElementById('f-ccy').value=p.ccy;document.getElementById('f-fx').value=p.fx;
+    document.getElementById('f-daypnl').value=p.dayPnl||0;document.getElementById('f-notes').value=p.notes||'';
+    document.getElementById('f-isin').value=p.isin||'';document.getElementById('f-search').value=p.liveTicker||p.isin||'';
+    if(p.type==='OPT'){document.getElementById('f-opt-type').value=p.optType||'CALL';document.getElementById('f-strike').value=p.strike||'';document.getElementById('f-expiry').value=p.expiry||'';document.getElementById('f-multiplier').value=p.multiplier||100;}
+    if(p.type==='SP'){selectedSpType=p.spType||'BRC';document.getElementById('f-sp-barrier').value=p.spBarrier||'';document.getElementById('f-sp-expiry').value=p.spExpiry||'';document.getElementById('f-sp-issuer').value=p.spIssuer||'';document.getElementById('f-sp-protection').value=p.spProtection||'';}
+    if(p.type==='ALT')document.getElementById('f-alt-type').value=p.altType||'OTHER';
+    if(p.divPerShare)document.getElementById('f-div-per-share').value=p.divPerShare;
+    if(p.divFreq)document.getElementById('f-div-freq').value=p.divFreq;
+    if(p.couponRate)document.getElementById('f-coupon-rate').value=p.couponRate;
+    if(p.couponFreq)document.getElementById('f-coupon-freq').value=p.couponFreq;
+    if(p.faceValue)document.getElementById('f-face-value').value=p.faceValue;
+    if(p.maturity)document.getElementById('f-maturity').value=p.maturity;
+    _pendingIncomeLog=[...(p.incomeLog||[])];
+    if(p.liveSource){window._pendingLive={source:p.liveSource,ticker:p.liveTicker};const lt=document.getElementById('live-tag');lt.textContent='live';lt.className='sbadge live';lt.style.display='inline';}
+    if(p.fxAuto)document.getElementById('fx-live-tag').style.display='inline';
+  }else{
+    document.getElementById('modal-title').textContent='Add Position';
+    populatePtfSelect(defPtf);
+    ['f-name','f-qty','f-entry','f-current','f-notes','f-daypnl','f-search','f-isin','f-coin','f-opt-under','f-fx-buy','f-fx-sell','f-sp-barrier','f-sp-issuer','f-sp-protection','f-div-per-share','f-coupon-rate','f-face-value'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+    document.getElementById('f-type').value='EQ';document.getElementById('f-dir').value='LONG';document.getElementById('f-ccy').value='CHF';document.getElementById('f-fx').value='1.0000';
+    if(document.getElementById('f-under-px'))document.getElementById('f-under-px').value='';selectedSpType='BRC';
+  }
+  updateFormFields();renderIncomeLogs();
+  ['div-calc-box','coupon-calc-box','income-total-box'].forEach(i=>document.getElementById(i).style.display='none');
+  document.getElementById('add-modal').classList.add('show');
+}
+
+function savePosition(){
+  const type=document.getElementById('f-type').value,name=document.getElementById('f-name').value.trim();
+  const portfolioId=document.getElementById('f-portfolio').value;
+  const dir=document.getElementById('f-dir').value,qty=parseFloat(document.getElementById('f-qty').value);
+  const entry=parseFloat(document.getElementById('f-entry').value),current=parseFloat(document.getElementById('f-current').value);
+  const ccy=document.getElementById('f-ccy').value,fx=parseFloat(document.getElementById('f-fx').value)||1;
+  const dayPnl=parseFloat(document.getElementById('f-daypnl').value)||0,notes=document.getElementById('f-notes').value.trim();
+  const isin=document.getElementById('f-isin').value.trim().toUpperCase()||null;
+  if(!name||isNaN(qty)||isNaN(entry)||isNaN(current)){alert('Please fill in name, quantity, entry and current price.');return;}
+  const pos={type,name,portfolioId,dir,qty,entry,current,ccy,fx,dayPnl,notes,isin,fxAuto:!!fxToCHF(ccy),incomeLog:[..._pendingIncomeLog]};
+  if(window._pendingLive){pos.liveSource=window._pendingLive.source;pos.liveTicker=window._pendingLive.ticker;pos.liveUpdated=new Date().toISOString();}
+  if(type==='EQ'){const dps=parseFloat(document.getElementById('f-div-per-share').value)||0;if(dps){pos.divPerShare=dps;pos.divFreq=document.getElementById('f-div-freq').value;}}
+  if(type==='FI'||type==='SP'){const cr=parseFloat(document.getElementById('f-coupon-rate').value)||0;if(cr){pos.couponRate=cr;pos.couponFreq=document.getElementById('f-coupon-freq').value;pos.faceValue=parseFloat(document.getElementById('f-face-value').value)||null;pos.maturity=document.getElementById('f-maturity').value||null;}}
+  if(type==='OPT'){pos.optType=document.getElementById('f-opt-type').value;pos.strike=parseFloat(document.getElementById('f-strike').value)||0;pos.expiry=document.getElementById('f-expiry').value;pos.multiplier=parseFloat(document.getElementById('f-multiplier').value)||100;pos.underlyingPx=parseFloat(document.getElementById('f-under-px').value)||null;}
+  if(type==='SP'){pos.spType=selectedSpType;pos.spBarrier=document.getElementById('f-sp-barrier').value;pos.spExpiry=document.getElementById('f-sp-expiry').value;pos.spIssuer=document.getElementById('f-sp-issuer').value;pos.spProtection=document.getElementById('f-sp-protection').value;}
+  if(type==='ALT')pos.altType=document.getElementById('f-alt-type').value;
+  if(editingId){const idx=positions.findIndex(x=>x.id===editingId);if(idx>=0){pos.id=editingId;pos.addedDate=positions[idx].addedDate;positions[idx]=pos;}}
+  else{pos.id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);pos.addedDate=new Date().toISOString().slice(0,10);positions.push(pos);}
+  save();closeModal('add-modal');
+  if(activePortfolio==='__all__'){activePortfolio=portfolioId;switchPortfolio(activePortfolio);}else render();
+}
+
+// ── DETAIL ──
+function openDetail(id){
+  const p=positions.find(x=>x.id===id);if(!p)return;
+  const pnl=calcPosPnl(p),val=calcPosValue(p),income=calcPositionIncomeChf(p);
+  const sign=pnl>=0?'+':'',col=pnl>=0?'var(--up)':'var(--down)';
+  const ptf=ptfById(p.portfolioId);
+  const totalReturn=pnl+income;
+  let rows=`
+    <div class="detail-row"><span>Portfolio</span><span style="color:${ptf?.color||'inherit'}">${ptf?.name||'—'}</span></div>
+    <div class="detail-row"><span>Type</span><span>${p.type==='SP'?(p.spType||'SP')+' — Structured Product':p.type==='ALT'?(ALT_LABELS[p.altType]||'Alternative'):TYPE_LABELS[p.type]}</span></div>
+    ${p.isin?`<div class="detail-row"><span>ISIN</span><span style="font-family:monospace;font-size:13px;">${p.isin}</span></div>`:''}
+    <div class="detail-row"><span>Direction</span><span>${p.dir}</span></div>
+    <div class="detail-row"><span>Qty / Nominal</span><span>${Number(p.qty).toLocaleString('de-CH',{maximumFractionDigits:8})}</span></div>
+    <div class="detail-row"><span>Entry</span><span>${fmtP(p.entry,p.ccy,4)}</span></div>
+    <div class="detail-row"><span>Current</span><span>${fmtP(p.current,p.ccy,4)}${p.liveSource?'<span class="sbadge live" style="margin-left:6px;">live</span>':'<span class="sbadge manual" style="margin-left:6px;">manual</span>'}</span></div>
+    <div class="detail-row"><span>FX to CHF</span><span>${p.fx}${p.fxAuto?'<span class="sbadge live" style="margin-left:6px;">auto</span>':''}</span></div>
+    <div class="detail-row"><span>Value</span><span>${fmtC2(val)}</span></div>
+    <div class="detail-row"><span>P&amp;L</span><span style="color:${col}">${sign}${fmtC2(pnl)}</span></div>
+    <div class="detail-row"><span>Income received</span><span style="color:var(--gold)">${income>0?'+'+fmtC2(income):'—'}</span></div>
+    <div class="detail-row"><span>Total return</span><span style="color:${totalReturn>=0?'var(--up)':'var(--down)'}">${totalReturn>=0?'+':''}${fmtC2(totalReturn)}</span></div>`;
+  if(p.type==='EQ'&&p.divPerShare){const annual=p.divPerShare*p.qty,fxR=p.fx||1;rows+=`<div class="detail-row"><span>Annual dividend</span><span>${fmtC2(annual/fxR)} · ${p.divFreq||'annual'}</span></div>`;if(p.entry>0)rows+=`<div class="detail-row"><span>Dividend yield</span><span style="color:var(--gold)">${(p.divPerShare/p.entry*100).toFixed(2)}%</span></div>`;}
+  if((p.type==='FI'||p.type==='SP')&&p.couponRate){const nominal=(p.faceValue||p.entry)*p.qty,fxR=p.fx||1;rows+=`<div class="detail-row"><span>Coupon</span><span>${p.couponRate}% · ${p.couponFreq||'semi'}</span></div>`;rows+=`<div class="detail-row"><span>Annual coupon</span><span style="color:var(--gold)">${fmtC2((p.couponRate/100*nominal)/fxR)}</span></div>`;if(p.maturity)rows+=`<div class="detail-row"><span>Maturity</span><span>${p.maturity}</span></div>`;}
+  if(p.type==='SP'){if(p.spBarrier)rows+=`<div class="detail-row"><span>Barrier</span><span>${p.spBarrier}</span></div>`;if(p.spIssuer)rows+=`<div class="detail-row"><span>Issuer</span><span>${p.spIssuer}</span></div>`;if(p.spProtection)rows+=`<div class="detail-row"><span>Protection</span><span>${p.spProtection}%</span></div>`;}
+  if(p.type==='OPT')rows+=`<div class="detail-row"><span>Option</span><span>${p.optType} K=${p.strike}${p.expiry?' exp '+p.expiry:''} ×${p.multiplier}</span></div>`;
+  if((p.incomeLog||[]).length){
+    rows+=`<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);padding:12px 0 6px;">Income log</div>`;
+    p.incomeLog.forEach(e=>{const fx2=fxToCHF(e.ccy||p.ccy)||1;rows+=`<div class="detail-row" style="font-size:13px;"><span>${e.date} · ${e.type}</span><span style="color:var(--gold)">+${e.amount.toFixed(2)} ${e.ccy} (${fmtC2(e.amount*fx2)})</span></div>`;});
+  }
+  if(p.liveSource)rows+=`<div class="detail-row"><span>Source</span><span>${p.liveSource==='coingecko'?'CoinGecko':'Yahoo Finance'} · ${p.liveTicker}</span></div>`;
+  if(p.notes)rows+=`<div class="detail-row"><span>Notes</span><span>${p.notes}</span></div>`;
+  if(p.addedDate)rows+=`<div class="detail-row"><span>Added</span><span>${p.addedDate}</span></div>`;
+  document.getElementById('detail-content').innerHTML=`
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    <div class="modal-title" style="margin-bottom:2px;">${p.name}</div>
+    <div class="modal-sub">${p.ccy} · ${TYPE_LABELS[p.type]||p.type}${p.isin?' · '+p.isin:''}</div>
+    ${rows}
+    <button class="btn-primary" style="margin-top:18px;" onclick="closeModal('detail-modal');openAddModal('${p.id}')">Edit / Log Income</button>
+    <button class="btn-danger" onclick="deletePosition('${p.id}')">Delete Position</button>`;
+  document.getElementById('detail-modal').classList.add('show');
+}
+function deletePosition(id){if(!confirm('Delete this position?'))return;positions=positions.filter(p=>p.id!==id);save();closeModal('detail-modal');render();}
+
+// ── MODAL ──
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function closeOnBg(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');});});
+
+// ── BOOT ──
+load();
+</script>
+</body>
+</html>
