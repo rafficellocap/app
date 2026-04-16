@@ -1168,8 +1168,13 @@ function savePos(){
   const dayPnl=parseFloat(document.getElementById('f-day').value)||0,notes=document.getElementById('f-notes').value.trim();
   const isin=document.getElementById('f-isin').value.trim().toUpperCase()||null;
   let dir=document.getElementById('f-dir').value;
-  if(!name||isNaN(qty)||isNaN(entry)||isNaN(curr)){alert('Please fill in name, quantity, entry and current price.');return;}
-  const p={type,name,portfolioId:ptfId,dir,qty,entry,current:curr,ccy,fx:fxVal,dayPnl,notes,isin,fxAuto:!!fxR(ccy),incomeLog:[..._ilog]};
+  const isSpread=(type==='OPT'&&_optStruct!=='Single');
+  if(!name||isNaN(qty)){alert('Please fill in name and quantity.');return;}
+  if(!isSpread&&(isNaN(entry)||isNaN(curr))){alert('Please fill in entry and current price.');return;}
+  // For spreads the entry/current are derived from legs — use 0 as fallback
+  const safeEntry=isSpread?0:(isNaN(entry)?0:entry);
+  const safeCurr=isSpread?0:(isNaN(curr)?0:curr);
+  const p={type,name,portfolioId:ptfId,dir,qty,entry:safeEntry,current:safeCurr,ccy,fx:fxVal,dayPnl,notes,isin,fxAuto:!!fxR(ccy),incomeLog:[..._ilog]};
   if(window._pl){p.liveSource=window._pl.source;p.liveTicker=window._pl.ticker;p.liveUpdated=new Date().toISOString();}
   if(type==='OPT'){
     if(_optStruct!=='Single'){
