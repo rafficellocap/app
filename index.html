@@ -542,8 +542,17 @@ function boot(){
   pos=ls.get(SK)||[];hist=ls.get(HK)||[];fx=ls.get(FK)||{};ptfs=ls.get(PK)||[];
   if(!ptfs.length){ptfs=[{id:'default',name:'Main Portfolio',desc:'Core holdings',color:PAL[0]}];ls.set(PK,ptfs);}
   pos.forEach(p=>{if(!p.portfolioId)p.portfolioId=ptfs[0].id;if(!p.incomeLog)p.incomeLog=[];});
-  aPtf=ptfs[0].id;
-  refreshFX().then(()=>{render();setTimeout(()=>document.getElementById('splash').classList.add('out'),1000);});
+  // Always start on the "All" overview so all portfolios are visible immediately
+  aPtf='__all__';
+  refreshFX().then(()=>{
+    // Show overview section, hide single portfolio section
+    document.getElementById('ov-sec').style.display='block';
+    document.getElementById('ptf-sec').style.display='none';
+    document.getElementById('fab').style.display='none';
+    buildPtfRow();
+    render();
+    setTimeout(()=>document.getElementById('splash').classList.add('out'),1000);
+  });
 }
 
 function saveAll(){ls.set(SK,pos);ls.set(PK,ptfs);ls.set(FK,fx);recHist();ls.set(HK,hist);}
@@ -623,9 +632,19 @@ function switchPtf(id){
 }
 function buildPtfRow(){
   const chips=['<div class="pp '+(aPtf==='__all__'?'active':'')+'" onclick="switchPtf(\'__all__\')">All</div>'];
-  ptfs.forEach(p=>{const a=aPtf===p.id;chips.push('<div class="pp '+(a?'active':'')+'" onclick="switchPtf(\''+p.id+'\')" '+(a?'style="background:'+p.color+';border-color:'+p.color+';color:#0d1117;"':'')+' ondblclick="openPtfModal(\''+p.id+'\')">'+p.name+'</div>');});
+  ptfs.forEach(p=>{
+    const a=aPtf===p.id;
+    chips.push('<div class="pp '+(a?'active':'')+'" onclick="switchPtf(\''+p.id+'\')" style="'+(a?'background:'+p.color+';border-color:'+p.color+';color:#0d1117;':'')+'" data-id="'+p.id+'">'+p.name+'</div>');
+  });
   chips.push('<div class="pp add" onclick="openPtfModal()">+ New</div>');
   document.getElementById('ptf-row').innerHTML=chips.join('');
+  // Add long-press support for editing on mobile
+  document.querySelectorAll('.pp[data-id]').forEach(el=>{
+    let pressTimer;
+    el.addEventListener('touchstart',()=>{pressTimer=setTimeout(()=>openPtfModal(el.dataset.id),600);},{passive:true});
+    el.addEventListener('touchend',()=>clearTimeout(pressTimer),{passive:true});
+    el.addEventListener('touchmove',()=>clearTimeout(pressTimer),{passive:true});
+  });
   const p=ptfById(aPtf);document.getElementById('app-title').textContent=aPtf==='__all__'?'Rafficello Capital':(p?p.name:'Portfolio');
 }
 function openPtfModal(id=null){
@@ -738,7 +757,7 @@ function renderOv(){
     const pnl=pnlForPtf(p.id),val=valForPtf(p.id),inc=incForPtf(p.id);
     const cnt=pos.filter(x=>x.portfolioId===p.id).length;
     const pc=pnl>=0?'up':'dn',sg=pnl>=0?'+':'';
-    return'<div class="ptf-card" onclick="switchPtf(\''+p.id+'\')" style="border-left:3px solid '+p.color+';"><div class="pcd" style="background:'+p.color+';"></div><div class="pci"><div class="pcn">'+p.name+'</div><div class="pcs">'+cnt+' position'+(cnt!==1?'s':'')+' · '+(p.desc||'')+'</div></div><div class="pcr"><div class="pcp '+pc+'">'+sg+fc(pnl)+'</div><div class="pcv">'+fc(val)+'</div>'+(inc>0?'<div class="pcinc">+'+fc(inc)+'</div>':'')+'</div></div>';
+    return'<div class="ptf-card" onclick="switchPtf(\''+p.id+'\')" style="border-left:3px solid '+p.color+';"><div class="pcd" style="background:'+p.color+';"></div><div class="pci"><div class="pcn">'+p.name+'<span onclick="event.stopPropagation();openPtfModal(\''+p.id+'\')" style="float:right;font-size:11px;color:#B8944A;padding:2px 8px;background:rgba(184,148,74,0.12);border-radius:5px;border:0.5px solid rgba(184,148,74,0.25);">Edit</span></div><div class="pcs">'+cnt+' position'+(cnt!==1?'s':'')+' · '+(p.desc||'')+'</div></div><div class="pcr"><div class="pcp '+pc+'">'+sg+fc(pnl)+'</div><div class="pcv">'+fc(val)+'</div>'+(inc>0?'<div class="pcinc">+'+fc(inc)+'</div>':'')+'</div></div>';
   }).join('');
   const tp=pnlAll(),tv=valAll(),ti=incAll(),tr=tp+ti;
   document.getElementById('ov-val').textContent=fc(tv);
