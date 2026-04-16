@@ -389,17 +389,53 @@ html,body{height:100%;width:100%;background:var(--navy);color:var(--white);font-
 
     <!-- Option — simplified -->
     <div id="opt-sec" style="display:none;">
-      <div class="fsec">Option details</div>
-      <div class="fr">
-        <div class="fg"><label class="fl">Option type</label><select class="fs" id="f-opt-type"><option value="CALL">Call</option><option value="PUT">Put</option></select></div>
-        <div class="fg"><label class="fl">Position</label><select class="fs" id="f-opt-dir"><option value="BUY">Buy (long)</option><option value="SELL">Sell (short)</option></select></div>
+      <div class="fsec">Structure</div>
+      <div class="sp-grid" id="opt-struct-grid" style="grid-template-columns:1fr 1fr 1fr;"></div>
+
+      <!-- Single leg -->
+      <div id="opt-single">
+        <div class="fr">
+          <div class="fg"><label class="fl">Option type</label><select class="fs" id="f-opt-type"><option value="CALL">Call</option><option value="PUT">Put</option></select></div>
+          <div class="fg"><label class="fl">Position</label><select class="fs" id="f-opt-dir"><option value="BUY">Buy (long)</option><option value="SELL">Sell (short)</option></select></div>
+        </div>
+        <div class="fr3">
+          <div class="fg"><label class="fl">Strike</label><input class="fi" type="number" id="f-strike" placeholder="0" step="any" oninput="calcSpreadMetrics()"></div>
+          <div class="fg"><label class="fl">Expiry</label><input class="fi" type="date" id="f-expiry"></div>
+          <div class="fg"><label class="fl">Multiplier</label><input class="fi" type="number" id="f-mult" value="100" oninput="calcSpreadMetrics()"></div>
+        </div>
+        <div class="calc" style="margin-bottom:4px;">Enter the <strong>option premium</strong> as entry &amp; current price below.<br>P&amp;L = (current − entry) × contracts × multiplier × FX rate<br>Sell: P&amp;L is reversed (profit when premium falls).</div>
       </div>
-      <div class="fr3">
-        <div class="fg"><label class="fl">Strike</label><input class="fi" type="number" id="f-strike" placeholder="0" step="any"></div>
-        <div class="fg"><label class="fl">Expiry</label><input class="fi" type="date" id="f-expiry"></div>
-        <div class="fg"><label class="fl">Multiplier</label><input class="fi" type="number" id="f-mult" value="100"></div>
+
+      <!-- Spread legs -->
+      <div id="opt-spread" style="display:none;">
+        <div class="fsec" style="margin-top:8px;">Leg 1 — Buy</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Type</label><select class="fs" id="f-leg1-type" onchange="calcSpreadMetrics()"><option value="CALL">Call</option><option value="PUT">Put</option></select></div>
+          <div class="fg"><label class="fl">Strike</label><input class="fi" type="number" id="f-leg1-strike" placeholder="0" step="any" oninput="calcSpreadMetrics()"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Entry premium</label><input class="fi" type="number" id="f-leg1-entry" placeholder="0.00" step="any" oninput="calcSpreadMetrics()"></div>
+          <div class="fg"><label class="fl">Current premium</label><input class="fi" type="number" id="f-leg1-curr" placeholder="0.00" step="any" oninput="calcSpreadMetrics()"></div>
+        </div>
+
+        <div class="fsec" style="margin-top:4px;">Leg 2 — Sell</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Type</label><select class="fs" id="f-leg2-type" onchange="calcSpreadMetrics()"><option value="CALL">Call</option><option value="PUT">Put</option></select></div>
+          <div class="fg"><label class="fl">Strike</label><input class="fi" type="number" id="f-leg2-strike" placeholder="0" step="any" oninput="calcSpreadMetrics()"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Entry premium</label><input class="fi" type="number" id="f-leg2-entry" placeholder="0.00" step="any" oninput="calcSpreadMetrics()"></div>
+          <div class="fg"><label class="fl">Current premium</label><input class="fi" type="number" id="f-leg2-curr" placeholder="0.00" step="any" oninput="calcSpreadMetrics()"></div>
+        </div>
+
+        <div class="fr">
+          <div class="fg"><label class="fl">Expiry</label><input class="fi" type="date" id="f-spread-expiry"></div>
+          <div class="fg"><label class="fl">Multiplier</label><input class="fi" type="number" id="f-spread-mult" value="100" oninput="calcSpreadMetrics()"></div>
+        </div>
+
+        <div class="calc" id="spread-calc" style="display:none;"></div>
+        <div class="fhint" style="margin-top:6px;">Net P&amp;L = (leg1 change − leg2 change) × contracts × multiplier</div>
       </div>
-      <div class="calc" style="margin-bottom:4px;">Enter the <strong>option premium</strong> as entry &amp; current price below.<br>P&amp;L = (current − entry) × contracts × multiplier × FX rate<br>Sell: P&amp;L is reversed (profit when premium falls).</div>
     </div>
 
     <!-- FX -->
@@ -595,15 +631,28 @@ function renderFxBar(){
 
 // ── CALCS ──
 function posPnl(p){
+  if(p.type==='OPT'&&p.isSpread){
+    // Spread: buy leg1, sell leg2
+    const m=p.spreadMult||100, fx=p.fx||1, qty=p.qty||1;
+    const leg1Pnl=(( p.leg1Curr||0)-(p.leg1Entry||0))*qty*m*fx;
+    const leg2Pnl=((p.leg2Entry||0)-(p.leg2Curr||0))*qty*m*fx; // sell leg
+    return leg1Pnl+leg2Pnl;
+  }
   const m=p.type==='OPT'?(p.multiplier||100):1;
-  // For options: direction is BUY or SELL (stored in p.optDir)
-  // BUY: profit when premium rises. SELL: profit when premium falls.
   let dir;
   if(p.type==='OPT') dir=p.optDir==='SELL'?-1:1;
   else dir=p.dir==='SHORT'?-1:1;
   return(p.current-p.entry)*p.qty*m*dir*(p.fx||1);
 }
-function posVal(p){const m=p.type==='OPT'?(p.multiplier||100):1;return p.current*p.qty*m*(p.fx||1);}
+function posVal(p){
+  if(p.type==='OPT'&&p.isSpread){
+    // Value = net current premium of spread
+    const m=p.spreadMult||100, fx=p.fx||1;
+    return((p.leg1Curr||0)-(p.leg2Curr||0))*p.qty*m*fx;
+  }
+  const m=p.type==='OPT'?(p.multiplier||100):1;
+  return p.current*p.qty*m*(p.fx||1);
+}
 function pnlForPtf(pid){return pos.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+posPnl(p),0);}
 function valForPtf(pid){return pos.filter(p=>p.portfolioId===pid).reduce((s,p)=>s+posVal(p),0);}
 function pnlAll(){return pos.reduce((s,p)=>s+posPnl(p),0);}
@@ -804,12 +853,12 @@ function renderPos(){
     const pc=pnl>=0?'up':'dn',sg=pnl>=0?'+':'';
     // Direction badge
     let badge;
-    if(p.type==='OPT')badge='<span class="dtag '+(p.optDir||'BUY')+'">'+p.optType+' '+(p.optDir||'BUY')+'</span>';
+    if(p.type==='OPT'){if(p.isSpread)badge='<span class="dtag BUY">'+p.spreadType+'</span>';else badge='<span class="dtag '+(p.optDir||'BUY')+'">'+p.optType+' '+(p.optDir||'BUY')+'</span>';}
     else badge='<span class="dtag '+p.dir+'">'+p.dir+'</span>';
     const isLive=!!p.liveSource;
     const iconLbl=p.type==='SP'?(p.spType||'SP').slice(0,3).toUpperCase():p.type==='ALT'?(p.altType||'ALT').slice(0,3):p.type;
     const dec=p.type==='CRY'||p.type==='FX'?4:2;
-    const metaStr=p.type==='OPT'?p.qty+'×'+fp(p.entry,p.ccy,2)+' K='+p.strike:Number(p.qty).toLocaleString('de-CH',{maximumFractionDigits:8})+'×'+fp(p.entry,p.ccy,dec);
+    const metaStr=p.type==='OPT'?(p.isSpread?p.qty+'× spread K='+p.leg1Strike+'/'+p.leg2Strike:p.qty+'×'+fp(p.entry,p.ccy,2)+' K='+p.strike):Number(p.qty).toLocaleString('de-CH',{maximumFractionDigits:8})+'×'+fp(p.entry,p.ccy,dec);
     const ptf=ptfById(p.portfolioId);
     const ptfTag=aPtf==='__all__'&&ptf?'<span class="ichip" style="color:'+ptf.color+';">'+ptf.name+'</span>':'';
     const isinTag=p.isin?'<span class="ichip">'+p.isin.slice(0,4)+'…</span>':'';
@@ -850,6 +899,64 @@ function addInc(){
 function remInc(i){_ilog.splice(i,1);renderIncLog();}
 
 // ── FX HELPERS ──
+// ── OPTION STRUCTURE ──
+const OPT_STRUCTS=['Single','Call Spread','Put Spread','Strangle'];
+let _optStruct='Single';
+
+function renderOptStructGrid(){
+  document.getElementById('opt-struct-grid').innerHTML=OPT_STRUCTS.map(t=>
+    '<button class="spb '+(_optStruct===t?'active':'')+'" onclick="setOptStruct(\''+t+'\')">'+t+'</button>'
+  ).join('');
+}
+function setOptStruct(s){
+  _optStruct=s;
+  renderOptStructGrid();
+  const isSingle=s==='Single';
+  document.getElementById('opt-single').style.display=isSingle?'block':'none';
+  document.getElementById('opt-spread').style.display=isSingle?'none':'block';
+  // Pre-set leg types based on structure
+  if(s==='Call Spread'){document.getElementById('f-leg1-type').value='CALL';document.getElementById('f-leg2-type').value='CALL';}
+  if(s==='Put Spread'){document.getElementById('f-leg1-type').value='PUT';document.getElementById('f-leg2-type').value='PUT';}
+  if(s==='Strangle'){document.getElementById('f-leg1-type').value='CALL';document.getElementById('f-leg2-type').value='PUT';}
+  calcSpreadMetrics();
+  // Update entry/current field visibility
+  const isSpread=s!=='Single';
+  const eEl=document.getElementById('f-entry');
+  const cEl=document.getElementById('f-curr');
+  if(eEl)eEl.closest('.fg').style.display=isSpread?'none':'block';
+  if(cEl)cEl.closest('.fg').style.display=isSpread?'none':'block';
+}
+function calcSpreadMetrics(){
+  if(_optStruct==='Single')return;
+  const l1e=parseFloat(document.getElementById('f-leg1-entry').value)||0;
+  const l1c=parseFloat(document.getElementById('f-leg1-curr').value)||0;
+  const l2e=parseFloat(document.getElementById('f-leg2-entry').value)||0;
+  const l2c=parseFloat(document.getElementById('f-leg2-curr').value)||0;
+  const l1k=parseFloat(document.getElementById('f-leg1-strike').value)||0;
+  const l2k=parseFloat(document.getElementById('f-leg2-strike').value)||0;
+  const mult=parseFloat(document.getElementById('f-spread-mult').value)||100;
+  const qty=parseFloat(document.getElementById('f-qty').value)||1;
+  const fxVal=parseFloat(document.getElementById('f-fx').value)||1;
+  const box=document.getElementById('spread-calc');
+  if(!l1e&&!l2e){box.style.display='none';return;}
+  const netEntry=l1e-l2e; // net debit (positive=debit spread, negative=credit spread)
+  const netCurr=l1c-l2c;
+  const pnlPerContract=(netCurr-netEntry)*mult*fxVal;
+  const totalPnl=pnlPerContract*qty;
+  const isCredit=netEntry<0;
+  const spreadWidth=Math.abs(l1k-l2k);
+  const maxProfit=isCredit?Math.abs(netEntry)*mult*fxVal*qty:(spreadWidth-Math.abs(netEntry))*mult*fxVal*qty;
+  const maxLoss=isCredit?(spreadWidth-Math.abs(netEntry))*mult*fxVal*qty:Math.abs(netEntry)*mult*fxVal*qty;
+  const be=_optStruct==='Put Spread'?Math.max(l1k,l2k)-Math.abs(netEntry):Math.min(l1k,l2k)+Math.abs(netEntry);
+  box.style.display='block';
+  box.innerHTML=
+    '<strong>Net premium:</strong> '+(isCredit?'Credit ':'Debit ')+Math.abs(netEntry).toFixed(4)+' · '+
+    '<strong>Current P&amp;L:</strong> '+(totalPnl>=0?'+':'')+fc2(totalPnl)+'<br>'+
+    '<strong>Max profit:</strong> '+fc2(maxProfit)+' · '+
+    '<strong>Max loss:</strong> −'+fc2(Math.abs(maxLoss))+'<br>'+
+    '<strong>Breakeven:</strong> ~'+be.toFixed(2);
+}
+
 function autofx(){
   const ccy=document.getElementById('f-ccy').value;
   const r=fxR(ccy);
@@ -965,12 +1072,22 @@ function updFields(){
   document.getElementById('sec-sec').style.display=['EQ','FI','SP'].includes(t)?'block':'none';
   document.getElementById('cry-sec').style.display=t==='CRY'?'block':'none';
   document.getElementById('opt-sec').style.display=t==='OPT'?'block':'none';
+  if(t==='OPT'){renderOptStructGrid();setOptStruct(_optStruct);}
   document.getElementById('fx-sec').style.display=t==='FX'?'block':'none';
   document.getElementById('alt-sec').style.display=t==='ALT'?'block':'none';
   document.getElementById('sp-sec').style.display=t==='SP'?'block':'none';
   document.getElementById('dir-field').style.display=t==='OPT'?'none':'block';
   document.getElementById('qlbl').textContent=t==='CRY'?'Amount (coins)':t==='FI'||t==='SP'?'Nominal / Units':t==='OPT'?'Contracts':'Quantity';
   document.getElementById('elbl').textContent=t==='OPT'?'Entry premium':'Entry price';
+  // Hide entry/current fields for spreads (legs have their own)
+  if(t==='OPT'){
+    const isSpread=_optStruct!=='Single';
+    document.getElementById('f-entry').closest('.fg').style.display=isSpread?'none':'block';
+    document.getElementById('f-curr').closest('.fg').style.display=isSpread?'none':'block';
+  } else {
+    document.getElementById('f-entry').closest('.fg').style.display='block';
+    document.getElementById('f-curr').closest('.fg').style.display='block';
+  }
   document.getElementById('inc-fields').style.display=['EQ','FI','SP','ALT'].includes(t)?'block':'none';
   document.getElementById('div-inc').style.display=t==='EQ'?'block':'none';
   document.getElementById('coup-inc').style.display=t==='FI'||t==='SP'?'block':'none';
@@ -1002,7 +1119,28 @@ function openAddModal(id=null){
     document.getElementById('f-ccy').value=p.ccy;document.getElementById('f-fx').value=p.fx;
     document.getElementById('f-day').value=p.dayPnl||0;document.getElementById('f-notes').value=p.notes||'';
     document.getElementById('f-isin').value=p.isin||'';document.getElementById('f-search').value=p.liveTicker||p.isin||'';
-    if(p.type==='OPT'){document.getElementById('f-opt-type').value=p.optType||'CALL';document.getElementById('f-opt-dir').value=p.optDir||'BUY';document.getElementById('f-strike').value=p.strike||'';document.getElementById('f-expiry').value=p.expiry||'';document.getElementById('f-mult').value=p.multiplier||100;}
+    if(p.type==='OPT'){
+      if(p.isSpread){
+        _optStruct=p.spreadType||'Call Spread';
+        document.getElementById('f-leg1-type').value=p.leg1Type||'CALL';
+        document.getElementById('f-leg1-strike').value=p.leg1Strike||'';
+        document.getElementById('f-leg1-entry').value=p.leg1Entry||'';
+        document.getElementById('f-leg1-curr').value=p.leg1Curr||'';
+        document.getElementById('f-leg2-type').value=p.leg2Type||'CALL';
+        document.getElementById('f-leg2-strike').value=p.leg2Strike||'';
+        document.getElementById('f-leg2-entry').value=p.leg2Entry||'';
+        document.getElementById('f-leg2-curr').value=p.leg2Curr||'';
+        document.getElementById('f-spread-expiry').value=p.spreadExpiry||'';
+        document.getElementById('f-spread-mult').value=p.spreadMult||100;
+      } else {
+        _optStruct='Single';
+        document.getElementById('f-opt-type').value=p.optType||'CALL';
+        document.getElementById('f-opt-dir').value=p.optDir||'BUY';
+        document.getElementById('f-strike').value=p.strike||'';
+        document.getElementById('f-expiry').value=p.expiry||'';
+        document.getElementById('f-mult').value=p.multiplier||100;
+      }
+    }
     if(p.type==='SP'){sSp=p.spType||'BRC';document.getElementById('f-barrier').value=p.spBarrier||'';document.getElementById('f-sp-exp').value=p.spExpiry||'';document.getElementById('f-issuer').value=p.spIssuer||'';document.getElementById('f-prot').value=p.spProtection||'';}
     if(p.type==='ALT')document.getElementById('f-alt').value=p.altType||'OTHER';
     if(p.divPerShare)document.getElementById('f-div').value=p.divPerShare;if(p.divFreq)document.getElementById('f-dfreq').value=p.divFreq;
@@ -1013,7 +1151,7 @@ function openAddModal(id=null){
   }else{
     document.getElementById('am-title').textContent='Add Position';popPtfSel(defPtf);
     ['f-name','f-qty','f-entry','f-curr','f-notes','f-day','f-search','f-isin','f-coin','f-fxbuy','f-fxsell','f-barrier','f-issuer','f-prot','f-div','f-cpn','f-face','f-strike'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
-    document.getElementById('f-type').value='EQ';document.getElementById('f-dir').value='LONG';document.getElementById('f-opt-dir').value='BUY';document.getElementById('f-ccy').value='CHF';document.getElementById('f-fx').value='1.0000';sSp='BRC';
+    document.getElementById('f-type').value='EQ';document.getElementById('f-dir').value='LONG';document.getElementById('f-opt-dir').value='BUY';document.getElementById('f-ccy').value='CHF';document.getElementById('f-fx').value='1.0000';sSp='BRC';_optStruct='Single';
   }
   updFields();renderIncLog();
   ['div-calc','cpn-calc','inc-tot'].forEach(i=>document.getElementById(i).style.display='none');
@@ -1033,7 +1171,33 @@ function savePos(){
   if(!name||isNaN(qty)||isNaN(entry)||isNaN(curr)){alert('Please fill in name, quantity, entry and current price.');return;}
   const p={type,name,portfolioId:ptfId,dir,qty,entry,current:curr,ccy,fx:fxVal,dayPnl,notes,isin,fxAuto:!!fxR(ccy),incomeLog:[..._ilog]};
   if(window._pl){p.liveSource=window._pl.source;p.liveTicker=window._pl.ticker;p.liveUpdated=new Date().toISOString();}
-  if(type==='OPT'){p.optType=document.getElementById('f-opt-type').value;p.optDir=document.getElementById('f-opt-dir').value;p.strike=parseFloat(document.getElementById('f-strike').value)||0;p.expiry=document.getElementById('f-expiry').value;p.multiplier=parseFloat(document.getElementById('f-mult').value)||100;p.dir=p.optDir==='SELL'?'SHORT':'LONG';}
+  if(type==='OPT'){
+    if(_optStruct!=='Single'){
+      p.isSpread=true;p.spreadType=_optStruct;
+      p.leg1Type=document.getElementById('f-leg1-type').value;
+      p.leg1Strike=parseFloat(document.getElementById('f-leg1-strike').value)||0;
+      p.leg1Entry=parseFloat(document.getElementById('f-leg1-entry').value)||0;
+      p.leg1Curr=parseFloat(document.getElementById('f-leg1-curr').value)||0;
+      p.leg2Type=document.getElementById('f-leg2-type').value;
+      p.leg2Strike=parseFloat(document.getElementById('f-leg2-strike').value)||0;
+      p.leg2Entry=parseFloat(document.getElementById('f-leg2-entry').value)||0;
+      p.leg2Curr=parseFloat(document.getElementById('f-leg2-curr').value)||0;
+      p.spreadExpiry=document.getElementById('f-spread-expiry').value;
+      p.spreadMult=parseFloat(document.getElementById('f-spread-mult').value)||100;
+      // Net premium for display
+      p.entry=p.leg1Entry-p.leg2Entry;
+      p.current=p.leg1Curr-p.leg2Curr;
+      p.dir='LONG';
+    } else {
+      p.isSpread=false;
+      p.optType=document.getElementById('f-opt-type').value;
+      p.optDir=document.getElementById('f-opt-dir').value;
+      p.strike=parseFloat(document.getElementById('f-strike').value)||0;
+      p.expiry=document.getElementById('f-expiry').value;
+      p.multiplier=parseFloat(document.getElementById('f-mult').value)||100;
+      p.dir=p.optDir==='SELL'?'SHORT':'LONG';
+    }
+  }
   if(type==='EQ'){const d=parseFloat(document.getElementById('f-div').value)||0;if(d){p.divPerShare=d;p.divFreq=document.getElementById('f-dfreq').value;}}
   if(type==='FI'||type==='SP'){const cr=parseFloat(document.getElementById('f-cpn').value)||0;if(cr){p.couponRate=cr;p.couponFreq=document.getElementById('f-cfreq').value;p.faceValue=parseFloat(document.getElementById('f-face').value)||null;p.maturity=document.getElementById('f-mat').value||null;}}
   if(type==='SP'){p.spType=sSp;p.spBarrier=document.getElementById('f-barrier').value;p.spExpiry=document.getElementById('f-sp-exp').value;p.spIssuer=document.getElementById('f-issuer').value;p.spProtection=document.getElementById('f-prot').value;}
@@ -1052,7 +1216,32 @@ function openDet(id){
   let rows='<div class="drow"><span>Portfolio</span><span style="color:'+(ptf?.color||'inherit')+'">'+( ptf?.name||'—')+'</span></div>';
   rows+='<div class="drow"><span>Type</span><span>'+(p.type==='SP'?(p.spType||'SP')+' — SP':p.type==='ALT'?(ALT_L[p.altType]||'Alt'):TL[p.type])+'</span></div>';
   if(p.isin)rows+='<div class="drow"><span>ISIN</span><span style="font-family:monospace;font-size:13px;">'+p.isin+'</span></div>';
-  if(p.type==='OPT'){rows+='<div class="drow"><span>Option</span><span>'+p.optType+' '+(p.optDir||'BUY')+' · K='+p.strike+(p.expiry?' exp '+p.expiry:'')+' ×'+(p.multiplier||100)+'</span></div>';}
+  if(p.type==='OPT'){
+    if(p.isSpread){
+      const netEntry=(p.leg1Entry||0)-(p.leg2Entry||0);
+      const netCurr=(p.leg1Curr||0)-(p.leg2Curr||0);
+      const m=p.spreadMult||100,qty=p.qty||1,fxVal=p.fx||1;
+      const totalPnl=((netCurr-netEntry)*m*qty*fxVal);
+      const spreadWidth=Math.abs((p.leg1Strike||0)-(p.leg2Strike||0));
+      const isCredit=netEntry<0;
+      rows+='<div class="drow"><span>Structure</span><span>'+p.spreadType+'</span></div>';
+      rows+='<div class="drow"><span>Leg 1 (Buy '+p.leg1Type+')</span><span>K='+p.leg1Strike+'</span></div>';
+      rows+='<div class="drow"><span>  Entry / Current</span><span>'+fp(p.leg1Entry||0,p.ccy,4)+' / '+fp(p.leg1Curr||0,p.ccy,4)+'</span></div>';
+      rows+='<div class="drow"><span>Leg 2 (Sell '+p.leg2Type+')</span><span>K='+p.leg2Strike+'</span></div>';
+      rows+='<div class="drow"><span>  Entry / Current</span><span>'+fp(p.leg2Entry||0,p.ccy,4)+' / '+fp(p.leg2Curr||0,p.ccy,4)+'</span></div>';
+      rows+='<div class="drow"><span>Net premium</span><span>'+(isCredit?'Credit ':'Debit ')+Math.abs(netEntry).toFixed(4)+' '+p.ccy+'</span></div>';
+      rows+='<div class="drow"><span>Expiry</span><span>'+(p.spreadExpiry||'—')+'</span></div>';
+      rows+='<div class="drow"><span>Multiplier</span><span>'+m+'</span></div>';
+      if(spreadWidth>0){
+        const maxP=isCredit?Math.abs(netEntry)*m*qty*fxVal:(spreadWidth-Math.abs(netEntry))*m*qty*fxVal;
+        const maxL=isCredit?(spreadWidth-Math.abs(netEntry))*m*qty*fxVal:Math.abs(netEntry)*m*qty*fxVal;
+        rows+='<div class="drow"><span>Max profit</span><span style="color:var(--up)">'+fc2(maxP)+'</span></div>';
+        rows+='<div class="drow"><span>Max loss</span><span style="color:var(--down)">−'+fc2(Math.abs(maxL))+'</span></div>';
+      }
+    } else {
+      rows+='<div class="drow"><span>Option</span><span>'+p.optType+' '+(p.optDir||'BUY')+' · K='+p.strike+(p.expiry?' exp '+p.expiry:'')+' ×'+(p.multiplier||100)+'</span></div>';
+    }
+  }
   else rows+='<div class="drow"><span>Direction</span><span>'+p.dir+'</span></div>';
   rows+='<div class="drow"><span>Qty / Nominal</span><span>'+Number(p.qty).toLocaleString('de-CH',{maximumFractionDigits:8})+'</span></div>';
   rows+='<div class="drow"><span>'+(p.type==='OPT'?'Entry premium':'Entry')+'</span><span>'+fp(p.entry,p.ccy,4)+'</span></div>';
