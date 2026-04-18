@@ -725,7 +725,7 @@ function openEodModal(){
   document.getElementById('eod-date-lbl').textContent=new Date().toLocaleDateString('de-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('eod-pos-list').innerHTML=pool.map(p=>{
     const dec=p.type==='CRY'||p.type==='FX'?4:2;
-    return'<div class="eod-pos-item"><div class="epi-info"><div class="epi-name">'+p.name+'</div><div class="epi-meta">'+fp(p.current,p.ccy,dec)+' current · '+fp(p.entry,p.ccy,dec)+' entry</div></div><div><input class="epi-input" type="number" data-id="'+p.id+'" placeholder="'+p.current.toFixed(dec)+'" step="any"><div class="epi-ccy">'+p.ccy+'</div></div></div>';
+    return'<div class="eod-pos-item"><div class="epi-info"><div class="epi-name">'+p.name+'</div><div class="epi-meta">entry: '+fp(p.entry,p.ccy,dec)+'</div></div><div><input class="epi-input" type="number" data-id="'+p.id+'" value="'+p.current.toFixed(dec)+'" step="any"><div class="epi-ccy">'+p.ccy+'</div></div></div>';
   }).join('');
   if(!pool.length)document.getElementById('eod-pos-list').innerHTML='<div style="color:var(--silver);font-size:13px;padding:16px 0;">No positions to update.</div>';
   document.getElementById('eod-modal').classList.add('show');
@@ -734,13 +734,24 @@ function saveEod(){
   const inputs=document.querySelectorAll('.epi-input');let updated=0;
   inputs.forEach(inp=>{
     const val=parseFloat(inp.value);
-    if(!isNaN(val)&&val>0){
+    // Save any valid number (including 0 for things like expired options)
+    if(!isNaN(val)&&val>=0){
       const p=pos.find(x=>x.id===inp.dataset.id);
       if(p){p.current=val;p.liveUpdated=new Date().toISOString();updated++;}
     }
   });
-  if(updated>0){saveAll();closeModal('eod-modal');render();alert(updated+' position'+(updated!==1?'s':'')+' updated.');}
-  else{closeModal('eod-modal');}
+  // Always save and record history even if prices unchanged — this logs today's snapshot
+  saveAll();
+  closeModal('eod-modal');
+  render();
+  if(updated>0){
+    // small toast-style feedback without blocking alert
+    const t=document.createElement('div');
+    t.textContent=updated+' price'+(updated!==1?'s':'')+' saved';
+    t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#4CAF7C;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;pointer-events:none;';
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),2500);
+  }
 }
 
 // ── REFRESH ──
@@ -1169,12 +1180,16 @@ function savePos(){
   const isin=document.getElementById('f-isin').value.trim().toUpperCase()||null;
   let dir=document.getElementById('f-dir').value;
   const isSpread=(type==='OPT'&&_optStruct!=='Single');
-  if(!name||isNaN(qty)){alert('Please fill in name and quantity.');return;}
-  if(!isSpread&&(isNaN(entry)||isNaN(curr))){alert('Please fill in entry and current price.');return;}
+  // For spreads, qty defaults to 1 if blank
+  const safeQty=isNaN(qty)?(isSpread?1:NaN):qty;
+  if(!name){alert('Please fill in a name for this position.');return;}
+  if(isNaN(safeQty)){alert('Please fill in the quantity / number of contracts.');return;}
+  if(!isSpread&&isNaN(entry)){alert('Please fill in the entry price.');return;}
+  if(!isSpread&&isNaN(curr)){alert('Please fill in the current price.');return;}
   // For spreads the entry/current are derived from legs — use 0 as fallback
   const safeEntry=isSpread?0:(isNaN(entry)?0:entry);
   const safeCurr=isSpread?0:(isNaN(curr)?0:curr);
-  const p={type,name,portfolioId:ptfId,dir,qty,entry:safeEntry,current:safeCurr,ccy,fx:fxVal,dayPnl,notes,isin,fxAuto:!!fxR(ccy),incomeLog:[..._ilog]};
+  const p={type,name,portfolioId:ptfId,dir,qty:safeQty,entry:safeEntry,current:safeCurr,ccy,fx:fxVal,dayPnl,notes,isin,fxAuto:!!fxR(ccy),incomeLog:[..._ilog]};
   if(window._pl){p.liveSource=window._pl.source;p.liveTicker=window._pl.ticker;p.liveUpdated=new Date().toISOString();}
   if(type==='OPT'){
     if(_optStruct!=='Single'){
